@@ -1,3 +1,22 @@
+# IguanaTexMac
+
+## Install
+
+```bash
+# install AppleScript
+mkdir -p '~/Library/Application Scripts/com.microsoft.Powerpoint'
+cp ./IguanaTex.scpt '~/Library/Application Scripts/com.microsoft.Powerpoint/IguanaTex.scpt'
+
+# install IguanaTexHelper
+sudo mkdir -p '/Library/Application Support/Microsoft/Office365/User Content.localized/Add-Ins.localized'
+sudo cp ./libIguanaTexHelper.dylib '/Library/Application Support/Microsoft/Office365/User Content.localized/Add-Ins.localized/libIguanaTexHelper.dylib'
+```
+start PowerPoint, Tools > PowerPoint Add-ins... > '+' , select IguanaTexMac.ppam
+
+
+Original README
+===============
+
 # IguanaTex
 
 (C) Jonathan Le Roux and Zvika Ben-Haim
