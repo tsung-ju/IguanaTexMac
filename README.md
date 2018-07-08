@@ -1,5 +1,7 @@
 # IguanaTexMac
 
+This is very experimental. Use at your own risk!
+
 ## Download
 https://github.com/ray851107/IguanaTexMac/releases
 
