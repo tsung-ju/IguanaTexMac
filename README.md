@@ -3,7 +3,12 @@
 ## Download
 https://github.com/ray851107/IguanaTexMac/releases
 
+## Prerequisites
+* PowerPoint 2016 Insider Builds
+* MacTeX
+
 ## Install
+
 1. extract the zip file
 2. install AppleScript
 ```bash
