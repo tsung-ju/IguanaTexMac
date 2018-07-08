@@ -2,8 +2,8 @@ VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} AboutBox 
    Caption         =   "IguanaTex"
    ClientHeight    =   4920
-   ClientLeft      =   45
-   ClientTop       =   330
+   ClientLeft      =   40
+   ClientTop       =   340
    ClientWidth     =   8820.001
    OleObjectBlob   =   "AboutBox.frx":0000
    StartUpPosition =   1  'CenterOwner
@@ -21,7 +21,7 @@ End Sub
 Private Sub LabelURL_Click()
     Link = "http://www.jonathanleroux.org/software/iguanatex/"
     Dim lSuccess As Long
-    lSuccess = ShellExecute(0, "Open", Link)
+    lSuccess = OpenLink(Link)
         
     If (lSuccess = 0) Then
         MsgBox "Cannot open " & Link

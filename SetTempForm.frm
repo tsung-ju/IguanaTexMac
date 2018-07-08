@@ -2,9 +2,9 @@ VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} SetTempForm 
    Caption         =   "Default Settings and Paths"
    ClientHeight    =   7230
-   ClientLeft      =   14
-   ClientTop       =   329
-   ClientWidth     =   6286
+   ClientLeft      =   20
+   ClientTop       =   340
+   ClientWidth     =   6280
    OleObjectBlob   =   "SetTempForm.frx":0000
    StartUpPosition =   1  'CenterOwner
 End
@@ -18,23 +18,7 @@ Dim LaTexEngineDisplayList As Variant
 Dim UsePDFList As Variant
 
 Private Sub ButtonAbsTempPath_Click()
-    Dim fd As FileDialog
-    Set fd = Application.FileDialog(msoFileDialogFolderPicker) 'msoFileDialogFilePicker
-    
-    Dim vrtSelectedItem As Variant
-    fd.AllowMultiSelect = False
-    fd.InitialFileName = AbsPathTextBox.Text
-    
-    If fd.Show = -1 Then
-
-        For Each vrtSelectedItem In fd.SelectedItems
-
-            AbsPathTextBox.Text = vrtSelectedItem
-
-        Next vrtSelectedItem
-    End If
-
-    Set fd = Nothing
+    AbsPathTextBox.Text = MacChooseFolder(AbsPathTextBox.Text)
 End Sub
 
 Private Sub ButtonCancelTemp_Click()
@@ -42,101 +26,28 @@ Private Sub ButtonCancelTemp_Click()
 End Sub
 
 Private Sub ButtonEditorPath_Click()
-    Dim fd As FileDialog
-    Set fd = Application.FileDialog(msoFileDialogFilePicker) 'msoFileDialogFolderPicker
-    
-    Dim vrtSelectedItem As Variant
-    fd.AllowMultiSelect = False
-    fd.InitialFileName = TextBoxExternalEditor.Text
-    fd.Filters.Clear
-    fd.Filters.Add "All Files", "*.*", 1
-    
-    If fd.Show = -1 Then
-        For Each vrtSelectedItem In fd.SelectedItems
-            TextBoxExternalEditor.Text = vrtSelectedItem
-        Next vrtSelectedItem
-    End If
-
-    Set fd = Nothing
+    TextBoxExternalEditor.Text = "open -b " & ShellEscape(MacChooseApp(TextBoxExternalEditor.Text))
     TextBoxExternalEditor.SetFocus
 End Sub
 
 Private Sub ButtonGSPath_Click()
-    Dim fd As FileDialog
-    Set fd = Application.FileDialog(msoFileDialogFilePicker) 'msoFileDialogFolderPicker
-    
-    Dim vrtSelectedItem As Variant
-    fd.AllowMultiSelect = False
-    fd.InitialFileName = TextBoxGS.Text
-    fd.Filters.Clear
-    fd.Filters.Add "All Files", "*.*", 1
-    
-    If fd.Show = -1 Then
-        For Each vrtSelectedItem In fd.SelectedItems
-            TextBoxGS.Text = vrtSelectedItem
-        Next vrtSelectedItem
-    End If
-
-    Set fd = Nothing
+    TextBoxGS.Text = MacChooseFile(TextBoxGS.Text)
     TextBoxGS.SetFocus
 End Sub
 
 Private Sub ButtonIMPath_Click()
-    Dim fd As FileDialog
-    Set fd = Application.FileDialog(msoFileDialogFilePicker) 'msoFileDialogFolderPicker
-    
-    Dim vrtSelectedItem As Variant
-    fd.AllowMultiSelect = False
-    fd.InitialFileName = TextBoxIMconv.Text
-    fd.Filters.Clear
-    fd.Filters.Add "All Files", "*.*", 1
-    
-    If fd.Show = -1 Then
-        For Each vrtSelectedItem In fd.SelectedItems
-            TextBoxIMconv.Text = vrtSelectedItem
-        Next vrtSelectedItem
-    End If
-
-    Set fd = Nothing
+    TextBoxIMconv.Text = MacChooseFile(TextBoxIMconv.Text)
     TextBoxIMconv.SetFocus
 End Sub
 
 
 Private Sub ButtonTeX2img_Click()
-    Dim fd As FileDialog
-    Set fd = Application.FileDialog(msoFileDialogFilePicker) 'msoFileDialogFolderPicker
-    
-    Dim vrtSelectedItem As Variant
-    fd.AllowMultiSelect = False
-    fd.InitialFileName = TextBoxTeX2img.Text
-    fd.Filters.Clear
-    fd.Filters.Add "All Files", "*.*", 1
-    
-    If fd.Show = -1 Then
-        For Each vrtSelectedItem In fd.SelectedItems
-            TextBoxTeX2img.Text = vrtSelectedItem
-        Next vrtSelectedItem
-    End If
-
-    Set fd = Nothing
+    TextBoxTeX2img.Text = MacChooseFile(TextBoxTeX2img.Text)
     TextBoxTeX2img.SetFocus
 End Sub
 
 Private Sub ButtonTeXExePath_Click()
-    Dim fd As FileDialog
-    Set fd = Application.FileDialog(msoFileDialogFolderPicker)
-    
-    Dim vrtSelectedItem As Variant
-    fd.AllowMultiSelect = False
-    fd.InitialFileName = TextBoxTeXExePath.Text
-    
-    If fd.Show = -1 Then
-        For Each vrtSelectedItem In fd.SelectedItems
-            TextBoxTeXExePath.Text = vrtSelectedItem
-        Next vrtSelectedItem
-    End If
-
-    Set fd = Nothing
+    TextBoxTeXExePath.Text = MacChooseFolder(TextBoxTeXExePath.Text)
     TextBoxTeXExePath.SetFocus
 End Sub
 
@@ -148,7 +59,7 @@ Private Sub ButtonSetTemp_Click()
     ' Temp folder
     SetRegistryValue HKEY_CURRENT_USER, RegPath, "AbsOrRel", REG_DWORD, BoolToInt(AbsPathButton.Value)
     SetRegistryValue HKEY_CURRENT_USER, RegPath, "Abs Temp Dir", REG_SZ, CStr(AbsPathTextBox.Text)
-    If Left(RelPathTextBox.Text, 2) = ".\" Then
+    If Left(RelPathTextBox.Text, 2) = "." & PathSeperator Then
         RelPathTextBox.Text = Mid(RelPathTextBox.Text, 3, Len(RelPathTextBox.Text) - 2)
     End If
     SetRegistryValue HKEY_CURRENT_USER, RegPath, "Rel Temp Dir", REG_SZ, CStr(RelPathTextBox.Text)
@@ -156,10 +67,10 @@ Private Sub ButtonSetTemp_Click()
     If AbsPathButton.Value = True Then
         res = AbsPathTextBox.Text
     Else
-        res = ".\" & RelPathTextBox.Text
+        res = "." & PathSeperator & RelPathTextBox.Text
     End If
-    If Right(res, 1) <> "\" Then
-        res = res & "\"
+    If res <> "" And Right(res, 1) <> PathSeperator Then
+        res = res & PathSeperator
     End If
     SetRegistryValue HKEY_CURRENT_USER, RegPath, "Temp Dir", REG_SZ, CStr(res)
     
@@ -172,8 +83,9 @@ Private Sub ButtonSetTemp_Click()
      
     ' GS command
     res = TextBoxGS.Text
-    If Left(res, 1) = """" Then res = Mid(res, 2, Len(res) - 1)
-    If Right(res, 1) = """" Then res = Left(res, Len(res) - 1)
+    ' no need to remove quotes on mac because we use open -b '....'
+    ' If Left(res, 1) = """" Then res = Mid(res, 2, Len(res) - 1)
+    ' If Right(res, 1) = """" Then res = Left(res, Len(res) - 1)
     SetRegistryValue HKEY_CURRENT_USER, RegPath, "GS Command", REG_SZ, CStr(res)
     
     ' Path to ImageMagick Convert
@@ -198,7 +110,7 @@ Private Sub ButtonSetTemp_Click()
     res = TextBoxTeXExePath.Text
     If Left(res, 1) = """" Then res = Mid(res, 2, Len(res) - 1)
     If Right(res, 1) = """" Then res = Left(res, Len(res) - 1)
-    If res <> "" And Right(res, 1) <> "\" Then res = res & "\"
+    If res <> "" And Right(res, 1) <> PathSeperator Then res = res & PathSeperator
     SetRegistryValue HKEY_CURRENT_USER, RegPath, "TeXExePath", REG_SZ, CStr(res)
     
     ' Magic scaling factor to fine-tune the scaling of Vector displays
@@ -236,7 +148,7 @@ End Sub
 Private Sub LabelDLgs_Click()
     Link = "http://www.ghostscript.com/download/gsdnld.html"
     Dim lSuccess As Long
-    lSuccess = ShellExecute(0, "Open", Link)
+    lSuccess = OpenLink(Link)
     If (lSuccess = 0) Then
         MsgBox "Cannot open " & Link
     End If
@@ -245,7 +157,7 @@ End Sub
 Private Sub LabelDLImageMagick_Click()
     Link = "http://www.imagemagick.org/script/download.php#windows"
     Dim lSuccess As Long
-    lSuccess = ShellExecute(0, "Open", Link)
+    lSuccess = OpenLink(Link)
     If (lSuccess = 0) Then
         MsgBox "Cannot open " & Link
     End If
@@ -254,7 +166,7 @@ End Sub
 Private Sub LabelDLTeX2img_Click()
     Link = "https://www.ms.u-tokyo.ac.jp/~abenori/soft/bin/TeX2img_2.1.0.zip"
     Dim lSuccess As Long
-    lSuccess = ShellExecute(0, "Open", Link)
+    lSuccess = OpenLink(Link)
     If (lSuccess = 0) Then
         MsgBox "Cannot open " & Link
     End If
@@ -263,7 +175,7 @@ End Sub
 Private Sub LabelTeX2imgGithub_Click()
     Link = "https://github.com/abenori/TeX2img"
     Dim lSuccess As Long
-    lSuccess = ShellExecute(0, "Open", Link)
+    lSuccess = OpenLink(Link)
     If (lSuccess = 0) Then
         MsgBox "Cannot open " & Link
     End If
@@ -272,7 +184,7 @@ End Sub
 Private Sub LabelDLtexstudio_Click()
     Link = "http://www.texstudio.org/"
     Dim lSuccess As Long
-    lSuccess = ShellExecute(0, "Open", Link)
+    lSuccess = OpenLink(Link)
     If (lSuccess = 0) Then
         MsgBox "Cannot open " & Link
     End If
@@ -318,13 +230,13 @@ Private Sub Reset_Click()
     'CheckBoxEMF.Value = False
     ComboBoxBitmapVector.ListIndex = 0
     
-    TextBoxGS.Text = "C:\Program Files (x86)\gs\gs9.15\bin\gswin32c.exe"
+    TextBoxGS.Text = DEFAULT_GS_COMMAND
     
-    TextBoxIMconv.Text = "C:\Program Files\ImageMagick\convert.exe"
+    TextBoxIMconv.Text = DEFAULT_IM_CONV
     
-    TextBoxTeX2img.Text = "%USERPROFILE%\Downloads\TeX2img\TeX2imgc.exe"
+    TextBoxTeX2img.Text = DEFAULT_TEX2IMG_COMMAND
     
-    TextBoxTeXExePath.Text = ""
+    TextBoxTeXExePath.Text = DEFAULT_TEX_EXE_PATH
     
     TextBoxDpi.Text = "1200"
     
@@ -355,9 +267,9 @@ Private Sub UserForm_Initialize()
     Dim res As String
     RegPath = "Software\IguanaTex"
     
-    res = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "Abs Temp Dir", "c:\temp\")
-    If Right(res, 1) <> "\" Then
-        res = res & "\"
+    res = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "Abs Temp Dir", "")
+    If res <> "" And Right(res, 1) <> PathSeperator Then
+        res = res & PathSeperator
     End If
     AbsPathTextBox.Text = res
     
@@ -368,10 +280,10 @@ Private Sub UserForm_Initialize()
     
     CheckBoxUTF8.Value = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "UseUTF8", True)
     
-    TextBoxGS.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "GS Command", "C:\Program Files (x86)\gs\gs9.15\bin\gswin32c.exe")
-    
-    TextBoxIMconv.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "IMconv", "C:\Program Files\ImageMagick\convert.exe")
-    
+    TextBoxGS.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "GS Command", DEFAULT_GS_COMMAND)
+
+    TextBoxIMconv.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "IMconv", DEFAULT_IM_CONV)
+
     TextBoxDpi.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "OutputDpi", "1200")
     
     TextBoxTimeOut.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "TimeOutTime", "60")
@@ -384,11 +296,11 @@ Private Sub UserForm_Initialize()
     TextBoxBitmapScalingX.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "BitmapScalingX", "1")
     TextBoxBitmapScalingY.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "BitmapScalingY", "1")
     
-    TextBoxExternalEditor.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "Editor", "C:\Program Files (x86)\TeXstudio\texstudio.exe")
+    TextBoxExternalEditor.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "Editor", DEFAULT_EDITOR)
     
-    TextBoxTeX2img.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "TeX2img Command", "%USERPROFILE%\Downloads\TeX2img\TeX2imgc.exe")
+    TextBoxTeX2img.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "TeX2img Command", DEFAULT_TEX2IMG_COMMAND)
     
-    TextBoxTeXExePath.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "TeXExePath", "")
+    TextBoxTeXExePath.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "TeXExePath", DEFAULT_TEX_EXE_PATH)
     
     'CheckBoxEMF.Value = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "EMFoutput", False)
     ComboBoxBitmapVector.List = Array("Bitmap", "Vector")

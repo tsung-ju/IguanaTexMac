@@ -15,3 +15,4 @@ Private Sub App_WindowBeforeDoubleClick(ByVal Sel As Selection, ByRef Cancel As 
         Cancel = True
     End If
 End Sub
+

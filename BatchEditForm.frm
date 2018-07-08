@@ -2,9 +2,9 @@ VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} BatchEditForm 
    Caption         =   "Batch edit"
    ClientHeight    =   5955
-   ClientLeft      =   45
-   ClientTop       =   375
-   ClientWidth     =   4710
+   ClientLeft      =   40
+   ClientTop       =   380
+   ClientWidth     =   4720
    OleObjectBlob   =   "BatchEditForm.frx":0000
    StartUpPosition =   1  'CenterOwner
 End

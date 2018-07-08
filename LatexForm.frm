@@ -2,8 +2,8 @@ VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} LatexForm 
    Caption         =   "IguanaTex"
    ClientHeight    =   5880
-   ClientLeft      =   15
-   ClientTop       =   330
+   ClientLeft      =   20
+   ClientTop       =   320
    ClientWidth     =   7560
    OleObjectBlob   =   "LatexForm.frx":0000
    StartUpPosition =   1  'CenterOwner
@@ -28,6 +28,9 @@ Dim FormHeightWidthSet As Boolean
 
 Dim theAppEventHandler As New AppEventHandler
 
+Public TextWindow1 As New TextWindow
+Public TextWindowTemplateCode As New TextWindow
+
 Sub InitializeApp()
     Set theAppEventHandler.App = Application
     
@@ -38,7 +41,7 @@ Sub InitializeApp()
     AddMenuItem "Rasterize selection...", "ConvertToPNG", 931
     AddMenuItem "Settings...", "LoadSetTempForm", 548
     AddMenuItem "Insert vector file...", "RibbonInsertVectorGraphicsFile", 23
-    
+
 End Sub
 
 Sub AddMenuItem(itemText As String, itemCommand As String, itemFaceId As Long)
@@ -134,49 +137,37 @@ End Function
 
 Private Sub WriteLaTeX2File(TempPath As String, FilePrefix As String)
     Const ForReading = 1, ForWriting = 2, ForAppending = 3
-    Set fs = CreateObject("Scripting.FileSystemObject")
+    Set fs = New FileSystemObject
     If fs.FileExists(TempPath & FilePrefix & ".png") Then
-        fs.DeleteFile TempPath + FilePrefix + "*.*" 'Make sure we don't keep old files
+        fs.FindDelete TempPath, FilePrefix + "*.*" 'Make sure we don't keep old files
     End If
-    RegPath = "Software\IguanaTex"
-    Dim UseUTF8 As Boolean
-    UseUTF8 = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "UseUTF8", True)
-    
-    If UseUTF8 = False Then
-        Set f = fs.CreateTextFile(TempPath + FilePrefix + ".tex", True)
-        f.Write TextBox1.Text
-        f.Close
-    Else
-        Dim BinaryStream As Object
-        Set BinaryStream = CreateObject("ADODB.stream")
-        BinaryStream.Type = 1
-        BinaryStream.Open
-        Dim adodbStream  As Object
-        Set adodbStream = CreateObject("ADODB.Stream")
-        With adodbStream
-            .Type = 2 'Stream type
-            .Charset = "utf-8"
-            .Open
-            .WriteText TextBox1.Text
-            '.SaveToFile TempPath & FilePrefix & ".tex", 2 'Save binary data To disk; problem: this includes a BOM
-            ' Workaround to avoid BOM in file:
-            .Position = 3 'skip BOM
-            .CopyTo BinaryStream
-            .Flush
-            .Close
-        End With
-        BinaryStream.SaveToFile TempPath & FilePrefix & ".tex", 2 'Save binary data To disk
-        BinaryStream.Flush
-        BinaryStream.Close
-    End If
+
+    ' always use utf-8
+
+    Dim fnum As Integer
+
+    ' clear file content
+    fnum = FreeFile()
+    Open TempPath + FilePrefix + ".tex" For Output Access Write As fnum
+    Close #fnum
+
+    ' write data
+    Dim data() As Byte
+    data = TextWindow1.Utf8
+
+    fnum = FreeFile()
+    Open TempPath + FilePrefix + ".tex" For Binary Access Write As fnum
+    Put #fnum, , data
+    Close #fnum
+
     Set fs = Nothing
 End Sub
 
 Sub ButtonRun_Click()
     Dim TempPath As String
     'TempPath = GetTempPath()
-    If Right(TextBoxTempFolder.Text, 1) <> "\" Then
-        TextBoxTempFolder.Text = TextBoxTempFolder.Text & "\"
+    If Right(TextBoxTempFolder.Text, 1) <> PathSeperator Then
+        TextBoxTempFolder.Text = TextBoxTempFolder.Text & PathSeperator
     End If
     TempPath = TextBoxTempFolder.Text
     
@@ -184,8 +175,8 @@ Sub ButtonRun_Click()
         Dim sPath As String
         sPath = ActivePresentation.path
         If Len(sPath) > 0 Then
-            If Right(sPath, 1) <> "\" Then
-                sPath = sPath & "\"
+            If Right(sPath, 1) <> PathSeperator Then
+                sPath = sPath & PathSeperator
             End If
             TempPath = sPath & TempPath
         Else
@@ -205,9 +196,8 @@ Sub ButtonRun_Click()
     LATEXENGINEID = ComboBoxLaTexEngine.ListIndex
     tex2pdf_command = LaTexEngineList(LATEXENGINEID)
     Dim TeXExePath As String
-    TeXExePath = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "TeXExePath", "")
+    TeXExePath = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "TeXExePath", DEFAULT_TEX_EXE_PATH)
     TeXExeExt = ""
-    If TeXExePath <> "" Then TeXExeExt = ".exe"
     Dim UsePDF As Boolean
     UsePDF = UsePDFList(LATEXENGINEID)
     
@@ -253,22 +243,25 @@ Sub ButtonRun_Click()
     
     ' Run latex
     Const ForReading = 1, ForWriting = 2, ForAppending = 3
-    Set fs = CreateObject("Scripting.FileSystemObject")
+    Set fs = New FileSystemObject
     Dim LogFile As Object
     FrameProcess.Visible = True
     
+    Dim gs_command As String
+    Dim tex2img_command As String
+    Dim IMConv As String
+
     If UseEMF = True Then ' Use TeX2img to generate an EMF file
-        tex2img_command = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "TeX2img Command", "%USERPROFILE%\Downloads\TeX2img\TeX2imgc.exe")
+        gs_command = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "GS Command", DEFAULT_GS_COMMAND)
+        tex2img_command = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "TeX2img Command", DEFAULT_TEX2IMG_COMMAND)
         LabelProcess.Caption = "LaTeX to EMF..."
         FrameProcess.Repaint
-        RetVal& = Execute("""" & tex2img_command & """ --latex " + tex2pdf_command + " --preview- """ + FilePrefix + ".tex"" """ + FilePrefix + ".emf""", TempPath, debugMode, TimeOutTime)
+        RetVal& = Execute(ShellEscape(tex2img_command) & " --latex " & tex2pdf_command & " --gs " & ShellEscape(gs_command) & " --no-preview " & ShellEscape(FilePrefix & ".tex") & " " & ShellEscape(FilePrefix & ".emf"), TempPath, debugMode, TimeOutTime)
         If (RetVal& <> 0 Or Not fs.FileExists(TempPath & FilePrefix & ".emf")) Then
             ' Error in Latex code
             ' Read log file and show it to the user
             If fs.FileExists(TempPath & FilePrefix & ".log") Then
-                Set LogFile = fs.OpenTextFile(TempPath + FilePrefix + ".log", ForReading)
-                LogFileViewer.TextBox1.Text = LogFile.ReadAll
-                LogFile.Close
+                LogFileViewer.TextBox1.Text = ReadAll(TempPath + FilePrefix + ".log")
                 LogFileViewer.TextBox1.ScrollBars = fmScrollBarsBoth
                 LogFileViewer.Show 1
             Else
@@ -283,8 +276,8 @@ Sub ButtonRun_Click()
         OutputType = "EMF"
     Else
         If UsePDF = True Then ' pdf to png route
-            gs_command = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "GS Command", "C:\Program Files (x86)\gs\gs9.15\bin\gswin32c.exe")
-            IMconv = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "IMconv", "C:\Program Files\ImageMagick\convert.exe")
+            gs_command = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "GS Command", DEFAULT_GS_COMMAND)
+            IMConv = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "IMconv", DEFAULT_IM_CONV)
             
             If tex2pdf_command = "platex" Then
                 OutputExt = ".dvi"
@@ -295,15 +288,13 @@ Sub ButtonRun_Click()
             End If
             FrameProcess.Repaint
             
-            RetVal& = Execute("""" & TeXExePath & tex2pdf_command & TeXExeExt & """ -shell-escape -interaction=batchmode """ + FilePrefix + ".tex""", TempPath, debugMode, TimeOutTime)
-            
+            RetVal& = Execute(ShellEscape(TeXExePath & tex2pdf_command & TeXExeExt) & " -shell-escape -interaction=batchmode " & ShellEscape(FilePrefix + ".tex"), TempPath, debugMode, TimeOutTime)
+
             If (RetVal& <> 0 Or Not fs.FileExists(TempPath & FilePrefix & OutputExt)) Then
                 ' Error in Latex code
                 ' Read log file and show it to the user
                 If fs.FileExists(TempPath & FilePrefix & ".log") Then
-                    Set LogFile = fs.OpenTextFile(TempPath + FilePrefix + ".log", ForReading)
-                    LogFileViewer.TextBox1.Text = LogFile.ReadAll
-                    LogFile.Close
+                    LogFileViewer.TextBox1.Text = ReadAll(TempPath + FilePrefix + ".log")
                     LogFileViewer.TextBox1.ScrollBars = fmScrollBarsBoth
                     LogFileViewer.Show 1
                 Else
@@ -319,7 +310,7 @@ Sub ButtonRun_Click()
                 LabelProcess.Caption = "DVI to PDF..."
                 FrameProcess.Repaint
                 ' platex actually outputs a DVI file, which we need to convert to PDF (we could go the EPS route, but this blends easier with IguanaTex's existing code)
-                RetValConv& = Execute("""" & TeXExePath & "dvipdfmx" & TeXExeExt & """ -o """ + FilePrefix + ".pdf"" """ & FilePrefix & ".dvi""", TempPath, debugMode, TimeOutTime)
+                RetValConv& = Execute(ShellEscape(TeXExePath & "dvipdfmx" & TeXExeExt) & " -o " & ShellEscape(FilePrefix & ".pdf") & " " & ShellEscape(FilePrefix & ".dvi"), TempPath, debugMode, TimeOutTime)
                 If (RetValConv& <> 0 Or Not fs.FileExists(TempPath & FilePrefix & ".pdf")) Then
                     ' Error in DVI to PDF conversion
                     MsgBox "Error while using dvipdm to convert from DVI to PDF."
@@ -331,7 +322,8 @@ Sub ButtonRun_Click()
             LabelProcess.Caption = "PDF to PNG..."
             FrameProcess.Repaint
             ' Output Bounding Box to file and read back in the appropriate information
-            RetValConv& = Execute("cmd /C """ & gs_command & """ -q -dBATCH -dNOPAUSE -sDEVICE=bbox " & FilePrefix & ".pdf 2> " & FilePrefix & ".bbx", TempPath, debugMode, TimeOutTime)
+            RetValConv& = Execute(ShellEscape(gs_command) & " -q -dBATCH -dNOPAUSE -sDEVICE=bbox " & ShellEscape(FilePrefix & ".pdf") & " 2> " & ShellEscape(FilePrefix & ".bbx"), TempPath, debugMode, TimeOutTime)
+
             If (RetValConv& <> 0 Or Not fs.FileExists(TempPath & FilePrefix & ".bbx")) Then
                 ' Error in bounding box computation
                 MsgBox "Error while using Ghostscript to compute the bounding box. Is your path correct?"
@@ -347,7 +339,7 @@ Sub ButtonRun_Click()
             Else
                 PdfPngDevice = "-sDEVICE=png16m"
             End If
-            RetValConv& = Execute("""" & gs_command & """ -q -dBATCH -dNOPAUSE " & PdfPngDevice & " -r" & OutputDpiString & " -sOutputFile=""" & FilePrefix & "_tmp.png""" & BBString & " -f """ & TempPath & FilePrefix & ".pdf""", TempPath, debugMode, TimeOutTime)
+            RetValConv& = Execute(ShellEscape(gs_command) & " -q -dBATCH -dNOPAUSE " & PdfPngDevice & " -r" & OutputDpiString & " -sOutputFile=" & ShellEscape(FilePrefix & "_tmp.png") & BBString & " -f " & ShellEscape(TempPath & FilePrefix & ".pdf"), TempPath, debugMode, TimeOutTime)
             If (RetValConv& <> 0 Or Not fs.FileExists(TempPath & FilePrefix & "_tmp.png")) Then
                 ' Error in PDF to PNG conversion
                 MsgBox "Error while using Ghostscript to convert from PDF to PNG. Is your path correct?"
@@ -358,7 +350,7 @@ Sub ButtonRun_Click()
             ' so there is a discrepancy with the dvipng output, which is always 96 (independent of the screen, actually).
             ' The only workaround I have found so far is to use Imagemagick's convert to change the DPI (but not the pixel size!)
             ' Execute """" & IMconv & """ -units PixelsPerInch """ & FilePrefix & "_tmp.png"" -density " & CStr(dpi) & " """ & FilePrefix & ".png""", TempPath, debugMode
-            RetValConv& = Execute("""" & IMconv & """ -units PixelsPerInch """ & FilePrefix & "_tmp.png"" -density " & CStr(default_screen_dpi) & " """ & FilePrefix & ".png""", TempPath, debugMode, TimeOutTime)
+            RetValConv& = Execute(ShellEscape(IMConv) & " -units PixelsPerInch " & ShellEscape(FilePrefix & "_tmp.png") & " -density " & CStr(default_screen_dpi) & " " & ShellEscape(FilePrefix & ".png"), TempPath, debugMode, TimeOutTime)
             If (RetValConv& <> 0 Or Not fs.FileExists(TempPath & FilePrefix & ".png")) Then
                 ' Error in PDF to PNG conversion
                 MsgBox "Error while using ImageMagick to change the PNG DPI. Is your path correct?" _
@@ -375,14 +367,13 @@ Sub ButtonRun_Click()
         ' dvi to png route
             LabelProcess.Caption = "LaTeX to DVI..."
             FrameProcess.Repaint
-            RetVal& = Execute("""" & TeXExePath & "pdflatex" & TeXExeExt & """ -shell-escape -output-format dvi -interaction=batchmode """ + FilePrefix + ".tex""", TempPath, debugMode, TimeOutTime)
+            RetVal& = Execute(ShellEscape(TeXExePath & "pdflatex" & TeXExeExt) & " -shell-escape -output-format dvi -interaction=batchmode " & ShellEscape(FilePrefix & ".tex"), TempPath, debugMode, TimeOutTime)
+
             If (RetVal& <> 0 Or Not fs.FileExists(TempPath & FilePrefix & ".dvi")) Then
                 ' Error in Latex code
                 ' Read log file and show it to the user
                 If fs.FileExists(TempPath & FilePrefix & ".log") Then
-                    Set LogFile = fs.OpenTextFile(TempPath + FilePrefix + ".log", ForReading)
-                    LogFileViewer.TextBox1.Text = LogFile.ReadAll
-                    LogFile.Close
+                    LogFileViewer.TextBox1.Text = ReadAll(TempPath + FilePrefix + ".log")
                     LogFileViewer.TextBox1.ScrollBars = fmScrollBarsBoth
                     LogFileViewer.Show 1
                 Else
@@ -401,7 +392,7 @@ Sub ButtonRun_Click()
             End If
             ' If the user created a .png by using the standalone class with convert, we use that, else we use dvipng
             If Not fs.FileExists(TempPath & FilePrefix & ".png") Then
-                RetValConv& = Execute("""" & TeXExePath & "dvipng" & TeXExeExt & """ " & DviPngSwitches & " -o """ & FilePrefix & ".png"" """ & FilePrefix & ".dvi""", TempPath, debugMode, TimeOutTime)
+                RetValConv& = Execute(ShellEscape(TeXExePath & "dvipng" & TeXExeExt) & " " & DviPngSwitches & " -o " & ShellEscape(FilePrefix & ".png") & " " & ShellEscape(FilePrefix & ".dvi"), TempPath, debugMode, TimeOutTime)
                 If (RetValConv& <> 0 Or Not fs.FileExists(TempPath & FilePrefix & ".png")) Then
                     MsgBox "dvipng failed, or did not return in " & TimeOutTimeString & " seconds and may have hung." _
                     & vbNewLine & "You may want to try compiling using the PDF->PNG option." _
@@ -780,7 +771,7 @@ Sub ButtonRun_Click()
     
     
     ' Delete temp files if not in debug mode
-    If debugMode = False Then fs.DeleteFile TempPath + FilePrefix + "*.*"
+    If debugMode = False Then fs.FindDelete TempPath, FilePrefix + "*.*"
     
     
     
@@ -792,9 +783,9 @@ End Sub
 
 Private Sub AddTagsToShape(vSh As Shape)
     With vSh.Tags
-        .Add "LATEXADDIN", TextBox1.Text
+        .Add "LATEXADDIN", TextWindow1.Text
         .Add "IguanaTexSize", val(textboxSize.Text)
-        .Add "IGUANATEXCURSOR", TextBox1.SelStart
+        .Add "IGUANATEXCURSOR", TextWindow1.SelStart
         .Add "TRANSPARENCY", checkboxTransp.Value
         .Add "FILENAME", TextBoxFile.Text
         .Add "LATEXENGINEID", ComboBoxLaTexEngine.ListIndex
@@ -1126,16 +1117,16 @@ End Function
 
 
 Private Function BoundingBoxString(BBXFile As String) As String
-    Const ForReading = 1
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    Set txtStream = fso.OpenTextFile(BBXFile, ForReading, False)
+    Dim fnum As Integer
+    fnum = FreeFile()
+    Open BBXFile For Input As #fnum
     Dim TextSplit As Variant
     Dim OutputDpiString As String
     OutputDpiString = TextBoxLocalDPI.Text
     Dim OutputDpi As Long
     OutputDpi = val(OutputDpiString)
-    Do While Not txtStream.AtEndOfStream
-    tmptext = txtStream.ReadLine
+    While Not EOF(fnum)
+    Line Input #fnum, tmptext
     TextSplit = Split(tmptext, " ")
     If TextSplit(0) = "%%HiResBoundingBox:" Then
         llx = val(TextSplit(1))
@@ -1148,8 +1139,8 @@ Private Function BoundingBoxString(BBXFile As String) As String
         cx = Str(-llx)
         cy = Str(-lly)
     End If
-    Loop
-    txtStream.Close
+    Wend
+    Close #fnum
     BoundingBoxString = " -g" & sx & "x" & sy & " -c ""<</Install {" & cx & " " & cy & " translate}>> setpagedevice"""
 End Function
 
@@ -1158,8 +1149,8 @@ Private Sub SaveSettings()
     SetRegistryValue HKEY_CURRENT_USER, RegPath, "Transparent", REG_DWORD, BoolToInt(checkboxTransp.Value)
     SetRegistryValue HKEY_CURRENT_USER, RegPath, "Debug", REG_DWORD, BoolToInt(checkboxDebug.Value)
     SetRegistryValue HKEY_CURRENT_USER, RegPath, "PointSize", REG_DWORD, CLng(val(textboxSize.Text))
-    SetRegistryValue HKEY_CURRENT_USER, RegPath, "LatexCode", REG_SZ, CStr(TextBox1.Text)
-    SetRegistryValue HKEY_CURRENT_USER, RegPath, "LatexCodeCursor", REG_DWORD, CLng(TextBox1.SelStart)
+    SetRegistryValue HKEY_CURRENT_USER, RegPath, "LatexCode", REG_SZ, CStr(TextWindow1.Text)
+    SetRegistryValue HKEY_CURRENT_USER, RegPath, "LatexCodeCursor", REG_DWORD, CLng(TextWindow1.SelStart)
     SetRegistryValue HKEY_CURRENT_USER, RegPath, "LatexFormHeight", REG_DWORD, CLng(LatexForm.Height)
     SetRegistryValue HKEY_CURRENT_USER, RegPath, "LatexFormWidth", REG_DWORD, CLng(LatexForm.Width)
     SetRegistryValue HKEY_CURRENT_USER, RegPath, "Multipage", REG_SZ, MultiPage1.Value
@@ -1176,10 +1167,10 @@ Private Sub LoadSettings()
     checkboxTransp.Value = CBool(GetRegistryValue(HKEY_CURRENT_USER, RegPath, "Transparent", True))
     checkboxDebug.Value = CBool(GetRegistryValue(HKEY_CURRENT_USER, RegPath, "Debug", False))
     textboxSize.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "PointSize", "20")
-    TextBox1.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "LatexCode", "\documentclass{article}" & Chr(13) & "\usepackage{amsmath}" & Chr(13) & "\pagestyle{empty}" & Chr(13) & "\begin{document}" & Chr(13) & Chr(13) & Chr(13) & Chr(13) & Chr(13) & "\end{document}")
-    TextBox1.SelStart = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "LatexCodeCursor", 0)
+    TextWindow1.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "LatexCode", DEFAULT_LATEX_CODE)
+    TextWindow1.SelStart = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "LatexCodeCursor", 0)
     MultiPage1.Value = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "Multipage", 0)
-    TextBox1.Font.size = val(GetRegistryValue(HKEY_CURRENT_USER, RegPath, "EditorFontSize", "10"))
+    TextWindow1.FontSize = val(GetRegistryValue(HKEY_CURRENT_USER, RegPath, "EditorFontSize", "10"))
     TextBoxTempFolder.Text = GetTempPath()
     TextBox1.WordWrap = CBool(GetRegistryValue(HKEY_CURRENT_USER, RegPath, "LatexFormWrap", True))
     ToggleButtonWrap.Value = TextBox1.WordWrap
@@ -1208,22 +1199,7 @@ Private Function BoolToInt(val) As Long
 End Function
 
 Private Sub ButtonTeXPath_Click()
-    Dim fd As FileDialog
-    Set fd = Application.FileDialog(msoFileDialogFilePicker) 'msoFileDialogFolderPicker
-    
-    Dim vrtSelectedItem As Variant
-    fd.AllowMultiSelect = False
-    fd.InitialFileName = TextBoxFile.Text
-    fd.Filters.Clear
-    fd.Filters.Add "Tex Files", "*.tex", 1
-    
-    If fd.Show = -1 Then
-        For Each vrtSelectedItem In fd.SelectedItems
-            TextBoxFile.Text = vrtSelectedItem
-        Next vrtSelectedItem
-    End If
-
-    Set fd = Nothing
+    TextBoxFile.Text = MacChooseFileOfType("tex")
     TextBoxFile.SetFocus
 End Sub
 
@@ -1277,19 +1253,19 @@ Private Sub ButtonMakeDefault_Click()
     SaveSettings
     Select Case MultiPage1.Value
         Case 0 ' Direct input
-            TextBox1.SetFocus
+            TextWindow1.SetFocus
         Case 1 ' Read from file
             TextBoxFile.SetFocus
         Case Else ' Templates
-            TextBoxTemplateCode.SetFocus
+            TextWindowTemplateCode.SetFocus
     End Select
 End Sub
 
 Private Sub CmdButtonExternalEditor_Click()
         
     ' Put the temporary path in the right format
-    If Right(TextBoxTempFolder.Text, 1) <> "\" Then
-        TextBoxTempFolder.Text = TextBoxTempFolder.Text & "\"
+    If Right(TextBoxTempFolder.Text, 1) <> PathSeperator Then
+        TextBoxTempFolder.Text = TextBoxTempFolder.Text & PathSeperator
     End If
     Dim TempPath As String
     TempPath = TextBoxTempFolder.Text
@@ -1297,8 +1273,8 @@ Private Sub CmdButtonExternalEditor_Click()
         Dim sPath As String
         sPath = ActivePresentation.path
         If Len(sPath) > 0 Then
-            If Right(sPath, 1) <> "\" Then
-                sPath = sPath & "\"
+            If Right(sPath, 1) <> PathSeperator Then
+                sPath = sPath & PathSeperator
             End If
             TempPath = sPath & TempPath
         Else
@@ -1321,8 +1297,8 @@ Private Sub CmdButtonExternalEditor_Click()
     
     ' Launch external editor
     On Error GoTo ShellError
-    Shell """" & GetEditorPath() & """ """ & TempPath & FilePrefix & ".tex""", vbNormalFocus
-    
+    AppleScriptTask "IguanaTex.scpt", "MacExecute", GetEditorPath() & " " & ShellEscape(TempPath & FilePrefix & ".tex")
+
     ' Show dialog form to reload from file or cancel
     ExternalEditorForm.Show
     Exit Sub
@@ -1335,17 +1311,17 @@ ShellError:
 End Sub
 
 Private Sub CmdButtonImportCode_Click()
-    TextBoxTemplateCode.Text = TextBox1.Text
-    TextBoxTemplateCode.SelStart = TextBox1.SelStart
-    TextBoxTemplateCode.SetFocus
+    TextWindowTemplateCode.Utf8 = TextWindow1.Utf8
+    TextWindowTemplateCode.SelStart = TextWindow1.SelStart
+    TextWindowTemplateCode.SetFocus
 End Sub
 
 Private Sub CmdButtonLoadTemplate_Click()
-    If TextBoxTemplateCode.Text = "" Then
+    If TextWindowTemplateCode.Text = "" Then
         MsgBox "Please select a template to be loaded"
     Else
-        TextBox1.Text = TextBoxTemplateCode.Text
-        TextBox1.SelStart = TextBoxTemplateCode.SelStart
+        TextWindow1.Utf8 = TextWindowTemplateCode.Utf8
+        TextWindow1.SelStart = TextWindowTemplateCode.SelStart
         MultiPage1.Value = 0
         Call ToggleInputMode
     End If
@@ -1374,24 +1350,24 @@ Private Sub CmdButtonRemoveTemplate_Click()
     End If
     Call UpdateTemplateRegistry
     ComboBoxTemplate.ListIndex = RemovedIndex
-    TextBoxTemplateCode.SetFocus
+    TextWindowTemplateCode.SetFocus
 End Sub
 
 Private Sub CmdButtonSaveTemplate_Click()
     ' get the right ID from the array of sorted template IDs
     templateID = TemplateSortedList(ComboBoxTemplate.ListIndex)
     ' add trailing new line if there isn't one: this helps with a bug where text with multi-byte characters gets chopped
-    If Not Right(TextBoxTemplateCode.Text, 1) = Chr(13) And Not Right(TextBoxTemplateCode.Text, 1) = Chr(10) Then
-        TextBoxTemplateCode.Text = TextBoxTemplateCode.Text & Chr(13)
+    If Not Right(TextWindowTemplateCode.Text, 1) = vbLf Then
+        TextWindowTemplateCode.Text = TextWindowTemplateCode.Text & vbLf
     End If
     ' build the corresponding registry key string
     ' Save name, code, and LaTeXEngineID
     RegPath = "Software\IguanaTex"
     Dim RegStr As String
     RegStr = "TemplateCode" & templateID
-    SetRegistryValue HKEY_CURRENT_USER, RegPath, RegStr, REG_SZ, CStr(TextBoxTemplateCode.Text)
+    SetRegistryValue HKEY_CURRENT_USER, RegPath, RegStr, REG_SZ, CStr(TextWindowTemplateCode.Text)
     RegStr = "TemplateCodeSelStart" & templateID
-    SetRegistryValue HKEY_CURRENT_USER, RegPath, RegStr, REG_DWORD, CLng(TextBoxTemplateCode.SelStart)
+    SetRegistryValue HKEY_CURRENT_USER, RegPath, RegStr, REG_DWORD, CLng(TextWindowTemplateCode.SelStart)
     RegStr = "TemplateLaTeXEngineID" & templateID
     SetRegistryValue HKEY_CURRENT_USER, RegPath, RegStr, REG_DWORD, ComboBoxLaTexEngine.ListIndex
     RegStr = "TemplateBitmapVector" & templateID
@@ -1411,7 +1387,7 @@ Private Sub CmdButtonSaveTemplate_Click()
     End If
     ComboBoxTemplate.List(ComboBoxTemplate.ListIndex) = TextBoxTemplateName.Text
     Call UpdateTemplateRegistry
-    TextBoxTemplateCode.SetFocus
+    TextWindowTemplateCode.SetFocus
 End Sub
 
 
@@ -1420,7 +1396,7 @@ Private Sub ComboBoxTemplate_Click()
     TextBoxTemplateName.Text = ComboBoxTemplate.Text
     ' Except for the empty "New Template" slot, get the code and LaTeXEngineID setting from registry
     If ComboBoxTemplate.ListIndex = ComboBoxTemplate.ListCount - 1 Then
-        TextBoxTemplateCode.Text = ""
+        TextWindowTemplateCode.Text = ""
         ComboBoxLaTexEngine.ListIndex = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "LaTeXEngineID", 0)
         TextBoxTempFolder.Text = GetTempPath()
     Else
@@ -1430,9 +1406,9 @@ Private Sub ComboBoxTemplate_Click()
         RegPath = "Software\IguanaTex"
         Dim RegStr As String
         RegStr = "TemplateCode" & templateID
-        TextBoxTemplateCode.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, RegStr, "")
+        TextWindowTemplateCode.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, RegStr, "")
         RegStr = "TemplateCodeSelStart" & templateID
-        TextBoxTemplateCode.SelStart = GetRegistryValue(HKEY_CURRENT_USER, RegPath, RegStr, 0)
+        TextWindowTemplateCode.SelStart = GetRegistryValue(HKEY_CURRENT_USER, RegPath, RegStr, 0)
         RegStr = "TemplateLaTeXEngineID" & templateID
         ComboBoxLaTexEngine.ListIndex = GetRegistryValue(HKEY_CURRENT_USER, RegPath, RegStr, GetRegistryValue(HKEY_CURRENT_USER, RegPath, "LaTeXEngineID", 0))
         RegStr = "TemplateBitmapVector" & templateID
@@ -1443,7 +1419,7 @@ Private Sub ComboBoxTemplate_Click()
         TextBoxLocalDPI.Text = GetRegistryValue(HKEY_CURRENT_USER, RegPath, RegStr, "")
         Apply_BitmapVector_Change
     End If
-    TextBoxTemplateCode.SetFocus
+    TextWindowTemplateCode.SetFocus
 End Sub
 
 Private Sub UpdateTemplateRegistry()
@@ -1462,26 +1438,26 @@ Private Sub UpdateTemplateRegistry()
 End Sub
 
 Private Sub CmdButtonTemplateFontDown_Click()
-    If TextBoxTemplateCode.Font.size > 4 Then
-        TextBoxTemplateCode.Font.size = TextBoxTemplateCode.Font.size - 1
+    If TextWindowTemplateCode.FontSize > 4 Then
+        TextWindowTemplateCode.FontSize = TextWindowTemplateCode.FontSize - 1
     End If
 End Sub
 
 Private Sub CmdButtonTemplateFontUp_Click()
-    If TextBoxTemplateCode.Font.size < 72 Then
-        TextBoxTemplateCode.Font.size = TextBoxTemplateCode.Font.size + 1
+    If TextWindowTemplateCode.FontSize < 72 Then
+        TextWindowTemplateCode.FontSize = TextWindowTemplateCode.FontSize + 1
     End If
 End Sub
 
 Private Sub CmdButtonEditorFontDown_Click()
-    If TextBox1.Font.size > 4 Then
-        TextBox1.Font.size = TextBox1.Font.size - 1
+    If TextWindow1.FontSize > 4 Then
+        TextWindow1.FontSize = TextWindow1.FontSize - 1
     End If
 End Sub
 
 Private Sub CmdButtonEditorFontUp_Click()
-    If TextBox1.Font.size < 72 Then
-        TextBox1.Font.size = TextBox1.Font.size + 1
+    If TextWindow1.FontSize < 72 Then
+        TextWindow1.FontSize = TextWindow1.FontSize + 1
     End If
 End Sub
 
@@ -1508,8 +1484,8 @@ Private Sub UserForm_Initialize()
     LatexForm.Label3.Visible = True
 
     FrameProcess.Visible = False
-    
-    
+
+
 End Sub
 
 Private Sub UserForm_Activate()
@@ -1521,8 +1497,9 @@ Private Sub UserForm_Activate()
         LatexForm.Height = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "LatexFormHeight", 312)
         LatexForm.Width = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "LatexFormWidth", 380)
     End If
-    ResizeForm
-    
+    ' ResizeForm
+    ToggleInputMode
+
 End Sub
 
 Sub RetrieveOldShapeInfo(oldshape As Shape, mainText As String)
@@ -1536,8 +1513,8 @@ Sub RetrieveOldShapeInfo(oldshape As Shape, mainText As String)
     ButtonRun.Caption = "ReGenerate"
     ButtonRun.Accelerator = "G"
     
-    TextBox1.Text = mainText
-    CursorPosition = Len(TextBox1.Text)
+    TextWindow1.Text = mainText
+    CursorPosition = Len(mainText)
                 
     Dim FormHeightSet As Boolean
     Dim FormWidthSet As Boolean
@@ -1580,7 +1557,7 @@ Sub RetrieveOldShapeInfo(oldshape As Shape, mainText As String)
     End With
     Apply_BitmapVector_Change
     FormHeightWidthSet = FormHeightSet And FormWidthSet
-    TextBox1.SelStart = CursorPosition
+    TextWindow1.SelStart = CursorPosition
     textboxSize.Enabled = False
 End Sub
 
@@ -1656,7 +1633,7 @@ Private Sub ResizeForm()
     checkboxDebug.Top = checkboxTransp.Top + 21 ' checkboxTransp.Height + 2
     CheckBoxResetFormat.Top = checkboxDebug.Top
     CheckBoxResetFormat.Left = checkboxDebug.Left + checkboxDebug.Width + 10
-    
+
 End Sub
 
 Private Sub MoveAnimation(oldshape As Shape, newShape As Shape)
@@ -1785,7 +1762,7 @@ End Sub
 
 
 Private Sub TextBoxFile_Change()
-    Set fs = CreateObject("Scripting.FileSystemObject")
+    Set fs = New FileSystemObject
     ButtonLoadFile.Enabled = fs.FileExists(TextBoxFile.Text) And isTex(TextBoxFile.Text)
 End Sub
 
@@ -1801,22 +1778,37 @@ Private Sub LoadTexFile()
     Dim TexFile As Object
     Const ForReading = 1, ForWriting = 2, ForAppending = 3
 
-    Set fs = CreateObject("Scripting.FileSystemObject")
+    Set fs = New FileSystemObject
     If fs.FileExists(TextBoxFile.Text) Then
-        Set TexFile = fs.OpenTextFile(TextBoxFile.Text, ForReading)
-        TextBox1.Text = TexFile.ReadAll
-        TexFile.Close
+        TextWindow1.Text = ReadAllExternal(TextBoxFile.Text)
     End If
     
 End Sub
 
+
 Private Sub ToggleInputMode()
-    Set fs = CreateObject("Scripting.FileSystemObject")
+    Call UserForm_Resize
+
+    If MultiPage1.Value = 0 Then
+        TextWindow1.Show
+        TextWindow1.ResizeAs TextBox1, Me
+    Else
+        TextWindow1.Hide
+    End If
+
+    If MultiPage1.Value = 2 Then
+        TextWindowTemplateCode.Show
+        TextWindowTemplateCode.ResizeAs TextBoxTemplateCode, Me
+    Else
+        TextWindowTemplateCode.Hide
+    End If
+
+    Set fs = New FileSystemObject
     Const ForReading = 1, ForWriting = 2, ForAppending = 3
-    
+
     Select Case MultiPage1.Value
         Case 0 ' Direct input
-            TextBox1.SetFocus
+            TextWindow1.SetFocus
         Case 1 ' Read from file
             TextBoxFile.SetFocus
             ButtonLoadFile.Enabled = fs.FileExists(TextBoxFile.Text) And isTex(TextBoxFile.Text)
@@ -1824,11 +1816,9 @@ Private Sub ToggleInputMode()
             If TextBoxTemplateName.Text = "" Then
                 TextBoxTemplateName.Text = ComboBoxTemplate.Text
             End If
-            TextBoxTemplateCode.SetFocus
-            
+            TextWindowTemplateCode.SetFocus
     End Select
-    Call UserForm_Resize
-    
+
 End Sub
 
 Private Function PackArrayToString(vArray As Variant) As String
@@ -1857,30 +1847,3 @@ End Function
 '        GetImageFileDPI = Round(imgFile.HorizontalResolution)
 '    End If
 'End Function
-
-
-' Mousewheel functions
-
-Private Sub TextBox1_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, _
-                        ByVal X As Single, ByVal Y As Single)
-    HookListBoxScroll Me, Me.TextBox1
-End Sub
-
-
-Private Sub ComboBoxLaTexEngine_MouseMove( _
-                        ByVal Button As Integer, ByVal Shift As Integer, _
-                        ByVal X As Single, ByVal Y As Single)
-         HookListBoxScroll Me, Me.ComboBoxLaTexEngine
-End Sub
-
-'Private Sub ComboBoxBitmapVector_MouseMove( _
-'                        ByVal Button As Integer, ByVal Shift As Integer, _
-'                        ByVal X As Single, ByVal Y As Single)
-'         HookListBoxScroll Me, Me.ComboBoxBitmapVector
-'End Sub
-
-
-Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
-        UnhookListBoxScroll
-End Sub
-

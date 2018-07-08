@@ -1,10 +1,10 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} ExternalEditorForm 
    Caption         =   "External Editor"
-   ClientHeight    =   2040
-   ClientLeft      =   15
-   ClientTop       =   330
-   ClientWidth     =   5685
+   ClientHeight    =   2037
+   ClientLeft      =   20
+   ClientTop       =   340
+   ClientWidth     =   5680
    OleObjectBlob   =   "ExternalEditorForm.frx":0000
    StartUpPosition =   1  'CenterOwner
 End
@@ -23,15 +23,15 @@ Private Sub CmdButtonCancel_Click()
 End Sub
 
 Private Sub CmdButtonReload_Click()
-    SelStartPos = LatexForm.TextBox1.SelStart
+    SelStartPos = LatexForm.TextWindow1.SelStart
     TempPath = LatexForm.TextBoxTempFolder.Text
     
     If Left(TempPath, 1) = "." Then
         Dim sPath As String
         sPath = ActivePresentation.path
         If Len(sPath) > 0 Then
-            If Right(sPath, 1) <> "\" Then
-                sPath = sPath & "\"
+            If Right(sPath, 1) <> PathSeperator Then
+                sPath = sPath & PathSeperator
             End If
             TempPath = sPath & TempPath
         Else
@@ -39,17 +39,12 @@ Private Sub CmdButtonReload_Click()
             Exit Sub
         End If
     End If
-    
-    Dim objStream
-    Set objStream = CreateObject("ADODB.Stream")
-    objStream.Charset = "utf-8"
-    objStream.Open
-    objStream.LoadFromFile (TempPath & GetFilePrefix() & ".tex")
-    LatexForm.TextBox1.Text = objStream.ReadText()
+
+    LatexForm.TextWindow1.Utf8 = ReadAllBytes(TempPath & GetFilePrefix() & ".tex")
 
     Unload ExternalEditorForm
-    LatexForm.TextBox1.SetFocus
-    If SelStartPos < Len(LatexForm.TextBox1.Text) Then
-        LatexForm.TextBox1.SelStart = SelStartPos
+    LatexForm.TextWindow1.SetFocus
+    If SelStartPos < Len(LatexForm.TextWindow1.Text) Then
+        LatexForm.TextWindow1.SelStart = SelStartPos
     End If
 End Sub

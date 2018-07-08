@@ -42,8 +42,8 @@ Public Sub ExportVisualBasicCode()
                 
         On Error Resume Next
         Err.Clear
-        
-        path = directory & "\" & VBComponent.name & extension
+
+        path = directory & PathSeperator & VBComponent.name & extension
         Call VBComponent.Export(path)
         
         If Err.Number <> 0 Then

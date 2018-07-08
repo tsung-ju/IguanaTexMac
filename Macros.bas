@@ -5,72 +5,6 @@ Attribute VB_Name = "Macros"
 '         to the macro MakeFormResizable in the UserForm's Activate event.
 'Source: http://www.mrexcel.com/forum/excel-questions/485489-resize-userform.html
 
-#If VBA7 Then
- Private Declare PtrSafe Function SetLastError _
-   Lib "kernel32.dll" _
-     (ByVal dwErrCode As Long) _
-   As Long
-   
- Public Declare PtrSafe Function GetActiveWindow _
-   Lib "user32.dll" () As Long
-
- Private Declare PtrSafe Function GetWindowLong _
-   Lib "user32.dll" Alias "GetWindowLongA" _
-     (ByVal hWnd As Long, _
-      ByVal nIndex As Long) _
-   As Long
-               
- Private Declare PtrSafe Function SetWindowLong _
-   Lib "user32.dll" Alias "SetWindowLongA" _
-     (ByVal hWnd As Long, _
-      ByVal nIndex As Long, _
-      ByVal dwNewLong As Long) _
-   As Long
- 
- Private Declare PtrSafe Function GetDC Lib "user32" _
-    (ByVal hWnd As Long) As Long
-
- Private Declare PtrSafe Function GetDeviceCaps Lib "gdi32" _
-    (ByVal hDC As Long, ByVal nIndex As Long) As Long
-
- Private Declare PtrSafe Function ReleaseDC Lib "user32" _
-    (ByVal hWnd As Long, ByVal hDC As Long) As Long
-
-
-#Else
- Private Declare Function SetLastError _
-   Lib "kernel32.dll" _
-     (ByVal dwErrCode As Long) _
-   As Long
-   
- Public Declare Function GetActiveWindow _
-   Lib "user32.dll" () As Long
-
- Private Declare Function GetWindowLong _
-   Lib "user32.dll" Alias "GetWindowLongA" _
-     (ByVal hwnd As Long, _
-      ByVal nIndex As Long) _
-   As Long
-               
- Private Declare Function SetWindowLong _
-   Lib "user32.dll" Alias "SetWindowLongA" _
-     (ByVal hwnd As Long, _
-      ByVal nIndex As Long, _
-      ByVal dwNewLong As Long) _
-   As Long
-   
- Private Declare Function GetDC Lib "User32" _
-    (ByVal hwnd As Long) As Long
-
- Private Declare Function GetDeviceCaps Lib "gdi32" _
-    (ByVal hDC As Long, ByVal nIndex As Long) As Long
-
- Private Declare Function ReleaseDC Lib "User32" _
-    (ByVal hwnd As Long, ByVal hDC As Long) As Long
-
-
-
-#End If
 
 Public RegenerateContinue As Boolean
 
@@ -79,54 +13,8 @@ Private Const LOGPIXELSX = 88  'Pixels/inch in X
 'A point is defined as 1/72 inches
 Private Const POINTS_PER_INCH As Long = 72
 
-'The size of a pixel, in points
-Public Function PointsPerPixel() As Double
-
- Dim hDC As Long
- Dim lDotsPerInch As Long
-
- hDC = GetDC(0)
- lDotsPerInch = GetDeviceCaps(hDC, LOGPIXELSX)
- PointsPerPixel = POINTS_PER_INCH / lDotsPerInch
- ReleaseDC 0, hDC
-
-End Function
-
-'The size of a pixel, in points
-Public Function lDotsPerInch() As Long
-
- Dim hDC As Long
-'  Dim lDotsPerInch As Long
-
- hDC = GetDC(0)
- lDotsPerInch = GetDeviceCaps(hDC, LOGPIXELSX)
- ReleaseDC 0, hDC
-
-End Function
-
 Public Sub MakeFormResizable()
-
-  Dim lStyle As Long
-  Dim hWnd As Long
-  Dim RetVal
-  
-  Const WS_THICKFRAME = &H40000
-  Const GWL_STYLE As Long = (-16)
-  
-    hWnd = GetActiveWindow
-  
-    'Get the basic window style
-     lStyle = GetWindowLong(hWnd, GWL_STYLE) Or WS_THICKFRAME
-     
-    'Set the basic window styles
-     RetVal = SetWindowLong(hWnd, GWL_STYLE, lStyle)
-    
-    'Clear any previous API error codes
-     SetLastError 0
-    
-    'Did the style change?
-     If RetVal = 0 Then MsgBox "Unable to make UserForm Resizable."
-     
+    ' TODO implement this
 End Sub
 
 Sub NewLatexEquation()
@@ -254,7 +142,7 @@ Function TryProcessShape(oldshape As Shape) As Boolean
                     SourceParts = Split(SourceParts(1), "template TP", , vbTextCompare)
                     TeXSource = SourceParts(0)
                 End If
-                LatexText = "\documentclass{article}" & Chr(13) & "\usepackage{amsmath}" & Chr(13) & "\pagestyle{empty}" & Chr(13) & "\begin{document}" & Chr(13) & Chr(13) & "$" & TeXSource & "$" & Chr(13) & Chr(13) & "\end{document}"
+                LatexText = DEFAULT_LATEX_CODE
                 oldshape.Tags.Add "IGUANATEXCURSOR", Len(LatexText) - 16
             Else
                 LatexText = .Item("SOURCE")
@@ -276,7 +164,7 @@ Sub DeDuplicateShapeNamesInSlide(SlideIndex As Integer)
     
     Dim NameList() As String
     
-    Dim dict As New Scripting.Dictionary
+    Dim dict As New Dictionary
     For Each vSh In vSl.Shapes
         If vSh.Type = msoGroup Then
             NameList = CollectGroupedItemList(vSh, True)
@@ -302,7 +190,7 @@ Sub DeDuplicateShapeNamesInSlide(SlideIndex As Integer)
     Set dict = Nothing
 End Sub
 
-Private Function RenameDuplicateShapes(vSh As Shape, dict As Scripting.Dictionary) As Scripting.Dictionary
+Private Function RenameDuplicateShapes(vSh As Shape, dict As Dictionary) As Dictionary
     If vSh.Type = msoGroup Then
         Dim n As Long
         For n = 1 To vSh.GroupItems.count
@@ -487,7 +375,7 @@ Sub RegenerateOneDisplay(vSh As Shape)
                     SourceParts = Split(SourceParts(1), "template TP", , vbTextCompare)
                     TeXSource = SourceParts(0)
                 End If
-                LatexText = "\documentclass{article}" & Chr(13) & "\usepackage{amsmath}" & Chr(13) & "\pagestyle{empty}" & Chr(13) & "\begin{document}" & Chr(13) & Chr(13) & "$" & TeXSource & "$" & Chr(13) & Chr(13) & "\end{document}"
+                LatexText = DEFAULT_LATEX_CODE
                 vSh.Tags.Add "IGUANATEXCURSOR", Len(LatexText) - 16
             Else
                 LatexText = .Item("SOURCE")
@@ -533,7 +421,7 @@ Sub Apply_BatchEditSettings()
     End If
     If BatchEditForm.CheckBoxReplace.Value Then
         If BatchEditForm.TextBoxFind.Text <> "" Then
-            LatexForm.TextBox1.Text = Replace(LatexForm.TextBox1.Text, BatchEditForm.TextBoxFind.Text, BatchEditForm.TextBoxReplacement.Text)
+            LatexForm.TextWindow1.Text = Replace(LatexForm.TextWindow1.Text, BatchEditForm.TextBoxFind.Text, BatchEditForm.TextBoxReplacement.Text)
         End If
     End If
 End Sub
@@ -693,9 +581,12 @@ End Function
 Public Function GetTempPath() As String
     Dim res As String
     RegPath = "Software\IguanaTex"
-    res = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "Temp Dir", "c:\temp\")
-    If Right(res, 1) <> "\" Then
-        res = res & "\"
+    res = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "Temp Dir", "")
+    If res = "" Then
+        res = MacTempPath()
+    End If
+    If Right(res, 1) <> PathSeperator Then
+        res = res & PathSeperator
     End If
     GetTempPath = res
 End Function
@@ -704,7 +595,7 @@ End Function
 Public Function GetEditorPath() As String
     Dim res As String
     RegPath = "Software\IguanaTex"
-    res = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "Editor", "texstudio.exe")
+    res = GetRegistryValue(HKEY_CURRENT_USER, RegPath, "Editor", DEFAULT_EDITOR)
     GetEditorPath = res
 End Function
 

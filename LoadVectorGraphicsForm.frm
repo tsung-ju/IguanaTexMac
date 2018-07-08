@@ -3,8 +3,8 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} LoadVectorGraphicsForm
    Caption         =   "Load Vector Graphics File"
    ClientHeight    =   3135
    ClientLeft      =   120
-   ClientTop       =   450
-   ClientWidth     =   6885
+   ClientTop       =   460
+   ClientWidth     =   6880
    OleObjectBlob   =   "LoadVectorGraphicsForm.frx":0000
    StartUpPosition =   1  'CenterOwner
 End
@@ -58,27 +58,13 @@ Private Function isEpsEmf(file As String)
 End Function
 
 Sub ButtonPath_Click()
-    Dim fd As FileDialog
-    Set fd = Application.FileDialog(msoFileDialogFilePicker)
-    Dim vrtSelectedItem As Variant
-    fd.AllowMultiSelect = False
-    fd.Filters.Clear
-    fd.Filters.Add "Vector graphics files", "*.pdf;*.ps;*.eps;*.emf", 1
-    fd.ButtonName = "&Select file"
-    
-    If fd.Show = -1 Then
-        For Each vrtSelectedItem In fd.SelectedItems
-            TextBoxFile.Text = vrtSelectedItem
-        Next vrtSelectedItem
-    End If
-
-    Set fd = Nothing
+    TextBoxFile.Text = MacChooseFileOfType("pdf,ps,eps,emf")
     TextBoxFile.SetFocus
     
 End Sub
 
 Private Sub TextBoxFile_Change()
-    Set fs = CreateObject("Scripting.FileSystemObject")
+    Set fs = New FileSystemObject
     ButtonLoadFile.Enabled = fs.FileExists(TextBoxFile.Text) And isEpsEmf(TextBoxFile.Text)
 End Sub
 
@@ -100,7 +86,7 @@ Public Sub InsertVectorGraphicsFile()
     TimeOutTime = val(TimeOutTimeString) * 1000
     Dim debugMode As Boolean
     debugMode = False
-    Set fs = CreateObject("Scripting.FileSystemObject")
+    Set fs = New FileSystemObject
     
     Dim StartFolder As String
     If ActivePresentation.path <> "" Then
@@ -123,7 +109,7 @@ Public Sub InsertVectorGraphicsFile()
         pdfPath = path + "_tmp.pdf"
         fs.CopyFile path, psPath
         If fs.FileExists(pdfPath) Then fs.DeleteFile pdfPath
-        RetVal& = Execute("""ps2pdf"" """ + psPath + """ " + pdfPath + """", StartFolder, debugMode, TimeOutTime)
+        RetVal& = Execute("ps2pdf " & ShellEscape(psPath) & " " & ShellEscape(pdfPath), StartFolder, debugMode, TimeOutTime)
         If (RetVal& <> 0 Or Not fs.FileExists(pdfPath)) Then
             MsgBox "PS to PDF conversion failed" _
             & vbNewLine & "Make sure ps2pdf.exe is installed (it comes with, e.g., Tex Live, MikTeX or Ghostscript) and can be run from anywhere via the command line"
@@ -139,7 +125,7 @@ Public Sub InsertVectorGraphicsFile()
         pdfPath = path + "_tmp.pdf"
         fs.CopyFile path, psPath
         If fs.FileExists(pdfPath) Then fs.DeleteFile pdfPath
-        RetVal& = Execute("""epspdf"" """ + psPath + """ " + pdfPath + """", StartFolder, debugMode, TimeOutTime)
+        RetVal& = Execute("epspdf " & ShellEscape(psPath) & " " & ShellEscape(pdfPath), StartFolder, debugMode, TimeOutTime)
         If (RetVal& <> 0 Or Not fs.FileExists(pdfPath)) Then
             MsgBox " EPS to PDF conversion failed" _
             & vbNewLine & "Make sure epspdf.exe is installed (it comes with Tex Live or MikTeX) and can be run from anywhere via the command line"
