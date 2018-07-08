@@ -12,12 +12,12 @@ https://github.com/ray851107/IguanaTexMac/releases
 ## Install
 
 1. extract the zip file
-2. install AppleScript
+2. install AppleScript (IguanaTex.scpt)
 ```bash
 mkdir -p '~/Library/Application Scripts/com.microsoft.Powerpoint'
 cp ./IguanaTex.scpt '~/Library/Application Scripts/com.microsoft.Powerpoint/IguanaTex.scpt'
 ```
-3. install IguanaTexHelper
+3. install IguanaTexHelper (libIguanaTexHelper.dylib)
 ```
 sudo mkdir -p '/Library/Application Support/Microsoft/Office365/User Content.localized/Add-Ins.localized'
 sudo cp ./libIguanaTexHelper.dylib '/Library/Application Support/Microsoft/Office365/User Content.localized/Add-Ins.localized/libIguanaTexHelper.dylib'
