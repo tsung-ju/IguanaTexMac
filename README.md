@@ -10,19 +10,26 @@ https://github.com/ray851107/IguanaTexMac/releases
 * MacTeX
 
 ## Install
+There are 3 files to install:
+* `IguanaTex.scpt`
+  * an AppleScript file for bypassing some restrictions of Office 2016
+  * (see https://msdn.microsoft.com/en-us/vba/vba-office-mac)
+* `libIguanaTexHelper.dylib`
+  * library for creating native text views
+* `IguanaTexMac.ppam`
+  * the main plugin file
 
-1. extract the zip file
-2. install AppleScript (IguanaTex.scpt)
+1. install AppleScript (IguanaTex.scpt)
 ```bash
 mkdir -p '~/Library/Application Scripts/com.microsoft.Powerpoint'
 cp ./IguanaTex.scpt '~/Library/Application Scripts/com.microsoft.Powerpoint/IguanaTex.scpt'
 ```
-3. install IguanaTexHelper (libIguanaTexHelper.dylib)
+2. install IguanaTexHelper (libIguanaTexHelper.dylib)
 ```
 sudo mkdir -p '/Library/Application Support/Microsoft/Office365/User Content.localized/Add-Ins.localized'
 sudo cp ./libIguanaTexHelper.dylib '/Library/Application Support/Microsoft/Office365/User Content.localized/Add-Ins.localized/libIguanaTexHelper.dylib'
 ```
-4. start PowerPoint, Tools > PowerPoint Add-ins... > '+' , select IguanaTexMac.ppam
+3. start PowerPoint, Tools > PowerPoint Add-ins... > '+' , select IguanaTexMac.ppam
 
 
 Original README
