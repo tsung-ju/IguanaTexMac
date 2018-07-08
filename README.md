@@ -1,7 +1,7 @@
 # IguanaTexMac
 
 ## Download
-
+https://github.com/ray851107/IguanaTexMac/releases
 
 ## Install
 1. extract the zip file
