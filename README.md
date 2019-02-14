@@ -6,7 +6,9 @@ This is very experimental. Use at your own risk!
 https://github.com/ray851107/IguanaTexMac/releases
 
 ## Prerequisites
-* PowerPoint 2016 (Version 16.16.7 190210)
+* Supported PowerPoint versions:
+  * PowerPoint 2016 (Version 16.16.7 190210 or later)
+  * PowerPoint 2019
 * MacTeX
 
 ## Install
