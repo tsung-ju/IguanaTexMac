@@ -59,8 +59,8 @@ Private Declare PtrSafe Function TWSetSZ _
     Lib "/Library/Application Support/Microsoft/Office365/User Content.localized/Add-Ins.localized/libIguanaTexHelper.dylib" _
    (ByVal Handle As LongLong, ByVal sz As LongLong, ByVal c As LongLong, ByVal d As LongLong) As Integer
 
-Private Declare PtrSafe Function memcpy Lib "libc.dylib" (ByVal dest As LongPtr, ByVal src As LongPtr, ByVal n As LongLong) As LongPtr
-Private Declare PtrSafe Sub free Lib "libc.dylib" (ByVal ptr As LongPtr)
+Private Declare PtrSafe Function memcpy Lib "/usr/lib/libc.dylib" (ByVal dest As LongPtr, ByVal src As LongPtr, ByVal n As LongLong) As LongPtr
+Private Declare PtrSafe Sub free Lib "/usr/lib/libc.dylib" (ByVal ptr As LongPtr)
 
 ' members
 Private Handle As LongLong

@@ -1,9 +1,9 @@
 Attribute VB_Name = "IconvWrapper"
 Option Explicit
 
-Private Declare PtrSafe Function iconv_open Lib "libiconv.dylib" (ByVal tocode As String, ByVal fromcode As String) As LongLong
-Private Declare PtrSafe Function iconv_close Lib "libiconv.dylib" (ByVal cd As LongPtr) As Integer
-Private Declare PtrSafe Function iconv Lib "libiconv.dylib" (ByVal cd As LongPtr, ByRef inbuf As LongPtr, ByRef inbytesleft As LongLong, ByRef outbuf As LongPtr, ByRef outbytesleft As LongLong) As LongLong
+Private Declare PtrSafe Function iconv_open Lib "/usr/lib/libiconv.dylib" (ByVal tocode As String, ByVal fromcode As String) As LongLong
+Private Declare PtrSafe Function iconv_close Lib "/usr/lib/libiconv.dylib" (ByVal cd As LongPtr) As Integer
+Private Declare PtrSafe Function iconv Lib "/usr/lib/libiconv.dylib" (ByVal cd As LongPtr, ByRef inbuf As LongPtr, ByRef inbytesleft As LongLong, ByRef outbuf As LongPtr, ByRef outbytesleft As LongLong) As LongLong
 
 Private Sub RunIconv(ByVal cd As LongPtr, ByRef inBytes() As Byte, ByRef outBytes() As Byte)
     Dim inbuf As LongPtr

@@ -1213,11 +1213,11 @@ Private Sub Apply_BitmapVector_Change()
         checkboxTransp.Enabled = False
         checkboxTransp.Value = True
         TextBoxLocalDPI.Enabled = False
-        LabelDpi.Enabled = False
+        LabelDPI.Enabled = False
     Else
         checkboxTransp.Enabled = True
         TextBoxLocalDPI.Enabled = True
-        LabelDpi.Enabled = True
+        LabelDPI.Enabled = True
     End If
 
 End Sub

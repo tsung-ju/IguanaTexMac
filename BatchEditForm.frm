@@ -127,7 +127,7 @@ End Sub
 Private Sub Apply_CheckBoxModifyLocalDPI()
     LabelLocalDPI.Enabled = CheckBoxModifyLocalDPI.Value
     TextBoxLocalDPI.Enabled = CheckBoxModifyLocalDPI.Value
-    LabelDpi.Enabled = CheckBoxModifyLocalDPI.Value
+    LabelDPI.Enabled = CheckBoxModifyLocalDPI.Value
 End Sub
 
 Private Sub Apply_CheckBoxModifySize()
