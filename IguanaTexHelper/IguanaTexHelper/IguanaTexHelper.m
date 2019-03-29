@@ -2,10 +2,6 @@
 
 #import <AppKit/AppKit.h>
 
-#define let __auto_type const
-#define var __auto_type
-
-
 static void displayDialog(NSString* str)
 {
     if (str == nil)
@@ -33,7 +29,7 @@ static void displayDialog(NSString* str)
     return NO;
 }
 -(void)parentDidBecomeMain:(NSNotification *)notification {
-    let queue = dispatch_get_main_queue();
+    dispatch_queue_t queue = dispatch_get_main_queue();
     dispatch_async(queue, ^(void) {
         [self makeKeyWindow];
     });
@@ -50,12 +46,12 @@ static NSMutableDictionary<NSNumber*, TextWindow*>* textWindows()
 
 static TextWindow* makeTextWindow(NSRect frame)
 {
-    let win = [[TextWindow alloc]initWithContentRect:frame
+    TextWindow* win = [[TextWindow alloc]initWithContentRect:frame
                                            styleMask:NSWindowStyleMaskBorderless
                                              backing:NSBackingStoreBuffered
                                                defer:NO];
     
-    let scroll = [[NSScrollView alloc]
+    NSScrollView* scroll = [[NSScrollView alloc]
                   initWithFrame:win.contentLayoutRect];
     
     scroll.borderType = NSNoBorder;
@@ -63,7 +59,7 @@ static TextWindow* makeTextWindow(NSRect frame)
     scroll.hasHorizontalScroller = NO;
     scroll.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     
-    let text = [[NSTextView alloc] initWithFrame:
+    NSTextView* text = [[NSTextView alloc] initWithFrame:
                 NSMakeRect(0, 0, scroll.contentSize.width, scroll.contentSize.height)];
     win.text = text;
     win.initialFirstResponder = text;
@@ -92,9 +88,9 @@ int64_t TWInit(void)
 {
     static int64_t lastHandle = 0;
     
-    let win = makeTextWindow(NSMakeRect(0,0,0,0));
+    TextWindow* win = makeTextWindow(NSMakeRect(0,0,0,0));
     
-    let handle = ++lastHandle;
+    int64_t handle = ++lastHandle;
     textWindows()[@(handle)] = win;
 
     return handle;
@@ -102,7 +98,7 @@ int64_t TWInit(void)
 
 int TWTerm(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
-    NSWindow* win = textWindows()[@(handle)];
+    TextWindow* win = textWindows()[@(handle)];
     if (win == nil)
         return 0;
     [win orderOut:nil];
@@ -112,11 +108,11 @@ int TWTerm(int64_t handle, int64_t b, int64_t c, int64_t d)
 
 int TWShow(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
-    NSWindow* win = textWindows()[@(handle)];
+    TextWindow* win = textWindows()[@(handle)];
     if (win == nil || win.isVisible)
         return 0;
     
-    let parent = NSApplication.sharedApplication.mainWindow;
+    NSWindow* parent = NSApplication.sharedApplication.mainWindow;
     
     [parent addChildWindow:win ordered:NSWindowAbove];
 
@@ -132,7 +128,7 @@ int TWHide(int64_t handle, int64_t b, int64_t c, int64_t d)
     NSWindow* win = textWindows()[@(handle)];
     if (win == nil)
         return 0;
-    let parent = NSApplication.sharedApplication.mainWindow;
+    NSWindow* parent = NSApplication.sharedApplication.mainWindow;
     [NSNotificationCenter.defaultCenter removeObserver:win name:NSWindowDidBecomeMainNotification object:parent];
     [win orderOut:nil];
     return 0;
@@ -146,7 +142,7 @@ static id<NSAccessibility> findFocused(id<NSAccessibility> a)
         return a;
     if ([a respondsToSelector:@selector(accessibilityChildren)]) {
         for (id<NSAccessibility> child in a.accessibilityChildren) {
-            let result = findFocused(child);
+            id<NSAccessibility> result = findFocused(child);
             if (result != nil)
                 return result;
         }
@@ -156,11 +152,11 @@ static id<NSAccessibility> findFocused(id<NSAccessibility> a)
 
 int TWResize(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
-    NSWindow* win = textWindows()[@(handle)];
+    TextWindow* win = textWindows()[@(handle)];
     if (win == nil)
         return 0;
     
-    let parent = [NSApplication sharedApplication].mainWindow;
+    NSWindow* parent = [NSApplication sharedApplication].mainWindow;
     
     id<NSAccessibility> textBox = findFocused(parent);
     
@@ -188,7 +184,7 @@ int TWGet(int64_t handle, char** data, size_t* len, int64_t d)
 {
     TextWindow* win = textWindows()[@(handle)];
     if (win != nil) {
-        let cstr =  [win.text.string cStringUsingEncoding:NSUTF8StringEncoding];
+        const char* cstr =  [win.text.string cStringUsingEncoding:NSUTF8StringEncoding];
         *len = strlen(cstr);
         *data = strdup(cstr);
     } else {
