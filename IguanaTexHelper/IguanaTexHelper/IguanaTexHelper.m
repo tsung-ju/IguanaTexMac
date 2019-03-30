@@ -167,7 +167,7 @@ int TWResize(int64_t handle, int64_t b, int64_t c, int64_t d)
     return 0;
 }
 
-int TWSet(int64_t handle, const char* data, size_t len, int64_t d)
+int TWSet(int64_t handle, const char* data, int64_t len, int64_t d)
 {
     TextWindow* win = textWindows()[@(handle)];
     if (win == nil)
@@ -180,7 +180,7 @@ int TWSet(int64_t handle, const char* data, size_t len, int64_t d)
     return 0;
 }
 
-int TWGet(int64_t handle, char** data, size_t* len, int64_t d)
+int TWGet(int64_t handle, char** data, int64_t* len, int64_t d)
 {
     TextWindow* win = textWindows()[@(handle)];
     if (win != nil) {
