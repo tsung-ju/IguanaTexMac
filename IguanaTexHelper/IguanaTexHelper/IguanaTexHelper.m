@@ -2,10 +2,54 @@
 
 #import <AppKit/AppKit.h>
 
+@interface TextView : NSTextView
+-(instancetype)initWithFrame:(NSRect)frameRect;
+@end
+
+@implementation TextView
+-(instancetype)initWithFrame:(NSRect)frameRect {
+    if ((self = [super initWithFrame:frameRect])) {
+        self.verticallyResizable = YES;
+        self.horizontallyResizable = NO;
+        self.autoresizingMask = NSViewWidthSizable;
+
+        self.textContainer.widthTracksTextView = YES;
+        self.textContainer.containerSize = NSMakeSize(frameRect.size.width, FLT_MAX);
+
+        self.font = [NSFont fontWithName:@"Menlo" size:10];
+        self.richText = NO;
+        self.automaticDashSubstitutionEnabled = NO;
+        self.automaticQuoteSubstitutionEnabled = NO;
+    }
+    return self;
+}
+@end
+
+
+@interface ScrollView : NSScrollView
+@property TextView* textView;
+-(instancetype)initWithFrame:(NSRect)frameRect;
+@end
+
+@implementation ScrollView
+-(instancetype)initWithFrame:(NSRect)frameRect {
+    if ((self = [super initWithFrame:frameRect])) {
+        self.borderType = NSNoBorder;
+        self.hasVerticalScroller = YES;
+        self.hasHorizontalScroller = NO;
+        self.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    }
+    return self;
+}
+@end
+
+
 @interface TextWindow : NSWindow
-@property NSTextView* text;
 @property (NS_NONATOMIC_IOSONLY, readonly) BOOL canBecomeKeyWindow;
 @property (NS_NONATOMIC_IOSONLY, readonly) BOOL canBecomeMainWindow;
+@property ScrollView* scrollView;
+@property TextView* textView;
+-(instancetype)initWithContentRect:(NSRect)contentRect;
 -(void)parentDidBecomeMain:(NSNotification *)notification;
 @end
 
@@ -16,6 +60,21 @@
 -(BOOL)canBecomeMainWindow {
     return NO;
 }
+-(instancetype)initWithContentRect:(NSRect)contentRect {
+    if ((self=[super initWithContentRect:contentRect
+                               styleMask:NSWindowStyleMaskBorderless
+                                 backing:NSBackingStoreBuffered
+                                   defer:NO])) {
+        self.scrollView = [[ScrollView alloc] initWithFrame:contentRect];
+        self.textView = [[TextView alloc] initWithFrame:NSMakeRect(0, 0, contentRect.size.width, contentRect.size.height)];
+
+        self.contentView = self.scrollView;
+        self.scrollView.documentView = self.textView;
+        self.initialFirstResponder = self.scrollView.textView;
+    }
+    
+    return self;
+}
 -(void)parentDidBecomeMain:(NSNotification *)notification {
     dispatch_queue_t queue = dispatch_get_main_queue();
     dispatch_async(queue, ^(void) {
@@ -23,6 +82,7 @@
     });
 }
 @end
+
 
 static NSMutableDictionary<NSNumber*, TextWindow*>* textWindows()
 {
@@ -32,79 +92,39 @@ static NSMutableDictionary<NSNumber*, TextWindow*>* textWindows()
     return table;
 }
 
-static TextWindow* makeTextWindow(NSRect frame)
-{
-    TextWindow* win = [[TextWindow alloc]initWithContentRect:frame
-                                           styleMask:NSWindowStyleMaskBorderless
-                                             backing:NSBackingStoreBuffered
-                                               defer:NO];
-    
-    NSScrollView* scroll = [[NSScrollView alloc]
-                  initWithFrame:win.contentLayoutRect];
-    
-    scroll.borderType = NSNoBorder;
-    scroll.hasVerticalScroller = YES;
-    scroll.hasHorizontalScroller = NO;
-    scroll.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-    
-    NSTextView* text = [[NSTextView alloc] initWithFrame:
-                NSMakeRect(0, 0, scroll.contentSize.width, scroll.contentSize.height)];
-    win.text = text;
-    win.initialFirstResponder = text;
-    
-    text.minSize = NSMakeSize(0.0, scroll.contentSize.height);
-    text.maxSize = NSMakeSize(FLT_MAX, FLT_MAX);
-    text.verticallyResizable = YES;
-    text.horizontallyResizable = NO;
-    text.autoresizingMask = NSViewWidthSizable;
-    
-    text.textContainer.containerSize = NSMakeSize(scroll.contentSize.width, FLT_MAX);
-    text.textContainer.widthTracksTextView = YES;
-    
-    text.font = [NSFont fontWithName:@"Menlo" size:10];
-    text.allowsUndo = YES;
-    text.richText = NO;
-    text.layoutManager.allowsNonContiguousLayout = NO;
-    
-    scroll.documentView = text;
-    win.contentView = scroll;
-    
-    return win;
-}
-
 int64_t TWInit(void)
 {
     static int64_t lastHandle = 0;
     
-    TextWindow* win = makeTextWindow(NSMakeRect(0,0,0,0));
+    TextWindow* window = [[TextWindow alloc] initWithContentRect:NSMakeRect(0,0,0,0)];
     
     int64_t handle = ++lastHandle;
-    textWindows()[@(handle)] = win;
+    textWindows()[@(handle)] = window;
 
     return handle;
 }
 
 int TWTerm(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
-    TextWindow* win = textWindows()[@(handle)];
-    if (win == nil)
+    TextWindow* window = textWindows()[@(handle)];
+    if (window == nil)
         return 0;
-    [win orderOut:nil];
+    [window orderOut:nil];
     [textWindows() removeObjectForKey:@(handle)];
     return 0;
 }
 
 int TWShow(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
-    TextWindow* win = textWindows()[@(handle)];
-    if (win == nil || win.isVisible)
+    TextWindow* window = textWindows()[@(handle)];
+    if (window == nil || window.isVisible)
         return 0;
     
     NSWindow* parent = NSApplication.sharedApplication.mainWindow;
     
-    [parent addChildWindow:win ordered:NSWindowAbove];
+    [parent addChildWindow:window ordered:NSWindowAbove];
 
-    [NSNotificationCenter.defaultCenter addObserver:win
+    [NSNotificationCenter.defaultCenter addObserver:window
                                            selector:@selector(parentDidBecomeMain:)
                                                name:NSWindowDidBecomeMainNotification
                                              object:parent];
@@ -113,12 +133,12 @@ int TWShow(int64_t handle, int64_t b, int64_t c, int64_t d)
 
 int TWHide(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
-    NSWindow* win = textWindows()[@(handle)];
-    if (win == nil)
+    NSWindow* window = textWindows()[@(handle)];
+    if (window == nil)
         return 0;
     NSWindow* parent = NSApplication.sharedApplication.mainWindow;
-    [NSNotificationCenter.defaultCenter removeObserver:win name:NSWindowDidBecomeMainNotification object:parent];
-    [win orderOut:nil];
+    [NSNotificationCenter.defaultCenter removeObserver:window name:NSWindowDidBecomeMainNotification object:parent];
+    [window orderOut:nil];
     return 0;
 }
 
@@ -140,8 +160,8 @@ static id<NSAccessibility> findFocused(id<NSAccessibility> a)
 
 int TWResize(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
-    TextWindow* win = textWindows()[@(handle)];
-    if (win == nil)
+    TextWindow* window = textWindows()[@(handle)];
+    if (window == nil)
         return 0;
     
     NSWindow* parent = [NSApplication sharedApplication].mainWindow;
@@ -151,28 +171,28 @@ int TWResize(int64_t handle, int64_t b, int64_t c, int64_t d)
     if (textBox == nil)
         return 0;
     
-    [win setFrame:textBox.accessibilityFrame display:YES];
+    [window setFrame:textBox.accessibilityFrame display:YES];
     return 0;
 }
 
 int TWSet(int64_t handle, const char* data, int64_t len, int64_t d)
 {
-    TextWindow* win = textWindows()[@(handle)];
-    if (win == nil)
+    TextWindow* window = textWindows()[@(handle)];
+    if (window == nil)
         return 0;
     
     if (data == nil || len == 0)
-        win.text.string = @"";
+        window.textView.string = @"";
     else
-        win.text.string = [[NSString alloc] initWithBytes:data length:len encoding:NSUTF8StringEncoding];
+        window.textView.string = [[NSString alloc] initWithBytes:data length:len encoding:NSUTF8StringEncoding];
     return 0;
 }
 
 int TWGet(int64_t handle, char** data, int64_t* len, int64_t d)
 {
-    TextWindow* win = textWindows()[@(handle)];
-    if (win != nil) {
-        const char* cstr =  [win.text.string cStringUsingEncoding:NSUTF8StringEncoding];
+    TextWindow* window = textWindows()[@(handle)];
+    if (window != nil) {
+        const char* cstr =  [window.textView.string cStringUsingEncoding:NSUTF8StringEncoding];
         *len = strlen(cstr);
         *data = strdup(cstr);
     } else {
@@ -184,44 +204,44 @@ int TWGet(int64_t handle, char** data, int64_t* len, int64_t d)
 
 int TWGetSel(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
-    TextWindow* win = textWindows()[@(handle)];
-    if (win == nil)
+    TextWindow* window = textWindows()[@(handle)];
+    if (window == nil)
         return 0;
-    return (int) win.text.selectedRange.location;
+    return (int) window.textView.selectedRange.location;
 }
 
 int TWSetSel(int64_t handle, int64_t sel, int64_t c, int64_t d)
 {
-    TextWindow* win = textWindows()[@(handle)];
-    if (win == nil)
+    TextWindow* window = textWindows()[@(handle)];
+    if (window == nil)
         return 0;
-    win.text.selectedRange = NSMakeRange(sel, 0);
+    window.textView.selectedRange = NSMakeRange(sel, 0);
     return 0;
 }
 
 int TWFocus(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
-    TextWindow* win = textWindows()[@(handle)];
-    if (win == nil)
+    TextWindow* window = textWindows()[@(handle)];
+    if (window == nil)
         return 0;
-    [win makeKeyWindow];
+    [window makeKeyWindow];
     return 0;
 }
 
 int TWGetSZ(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
-    TextWindow* win = textWindows()[@(handle)];
-    if (win == nil)
+    TextWindow* window = textWindows()[@(handle)];
+    if (window == nil)
         return 0;
-    return (int) win.text.font.pointSize;
+    return (int) window.textView.font.pointSize;
 }
 
 int TWSetSZ(int64_t handle, int64_t sz, int64_t c, int64_t d)
 {
-    TextWindow* win = textWindows()[@(handle)];
-    if (win == nil)
+    TextWindow* window = textWindows()[@(handle)];
+    if (window == nil)
         return 0;
-    win.text.font = [NSFont fontWithName:@"Menlo" size:sz];
+    window.textView.font = [NSFont fontWithName:@"Menlo" size:sz];
     return 0;
 }
 
