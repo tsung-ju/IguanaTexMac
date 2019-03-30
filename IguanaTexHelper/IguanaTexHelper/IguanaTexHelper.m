@@ -2,18 +2,6 @@
 
 #import <AppKit/AppKit.h>
 
-static void displayDialog(NSString* str)
-{
-    if (str == nil)
-        str = @"nil";
-    NSAlert *alert = [[NSAlert alloc] init];
-    [alert setMessageText:@"dialog"];
-    [alert setInformativeText:str];
-    [alert setAlertStyle:NSAlertStyleWarning];
-    [alert runModal];
-}
-
-
 @interface TextWindow : NSWindow
 @property NSTextView* text;
 @property (NS_NONATOMIC_IOSONLY, readonly) BOOL canBecomeKeyWindow;
