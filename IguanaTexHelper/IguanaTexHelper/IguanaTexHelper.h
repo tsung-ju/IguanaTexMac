@@ -13,8 +13,8 @@ EXPORT int TWHide(int64_t handle, int64_t b, int64_t c, int64_t d);
 EXPORT int TWResize(int64_t handle, int64_t b, int64_t c, int64_t d);
 EXPORT int TWFocus(int64_t handle, int64_t b, int64_t c, int64_t d);
 
-EXPORT int TWSet(int64_t h, const char* data, int64_t len, int64_t d);
-EXPORT int TWGet(int64_t h, char** data, int64_t* len, int64_t d);
+EXPORT int TWSet(int64_t handle, const char* data, int64_t len, int64_t d);
+EXPORT int TWGet(int64_t handle, char** data, int64_t* len, int64_t d);
 
 EXPORT int TWGetSel(int64_t handle, int64_t b, int64_t c, int64_t d);
 EXPORT int TWSetSel(int64_t handle, int64_t sel, int64_t c, int64_t d);
