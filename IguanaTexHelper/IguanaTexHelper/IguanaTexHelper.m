@@ -189,9 +189,10 @@ int TWGet(int64_t handle, char** data, int64_t* len, int64_t d)
 {
     TextWindow* window = textWindows()[@(handle)];
     if (window != nil) {
-        const char* cstr =  [window.textView.string cStringUsingEncoding:NSUTF8StringEncoding];
-        *len = strlen(cstr);
-        *data = strdup(cstr);
+        NSData* bytes = [window.textView.string dataUsingEncoding:NSUTF8StringEncoding];
+        *data = malloc(bytes.length);
+        [bytes getBytes:*data length:bytes.length];
+        *len = bytes.length;
     } else {
         *data = NULL;
         *len = 0;
