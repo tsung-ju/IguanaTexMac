@@ -233,12 +233,13 @@ int TWGetSZ(int64_t handle, int64_t b, int64_t c, int64_t d)
     return (int) window.textView.font.pointSize;
 }
 
-int TWSetSZ(int64_t handle, int64_t sz, int64_t c, int64_t d)
+int TWSetSZ(int64_t handle, int64_t size, int64_t c, int64_t d)
 {
     TextWindow* window = textWindows()[@(handle)];
     if (window == nil)
         return 0;
-    window.textView.font = [NSFont fontWithName:@"Menlo" size:sz];
+    NSFontDescriptor* descriptor = window.textView.font.fontDescriptor;
+    window.textView.font = [NSFont fontWithDescriptor:descriptor size:size];
     return 0;
 }
 

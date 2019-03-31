@@ -21,4 +21,4 @@ EXPORT int TWGetSel(int64_t handle, int64_t b, int64_t c, int64_t d);
 EXPORT int TWSetSel(int64_t handle, int64_t sel, int64_t c, int64_t d);
 
 EXPORT int TWGetSZ(int64_t handle, int64_t b, int64_t c, int64_t d);
-EXPORT int TWSetSZ(int64_t handle, int64_t sz, int64_t c, int64_t d);
+EXPORT int TWSetSZ(int64_t handle, int64_t size, int64_t c, int64_t d);
