@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <stdint.h>
 
 #define EXPORT __attribute__((visibility ("default")))
