@@ -6,6 +6,23 @@
 -(instancetype)initWithFrame:(NSRect)frameRect;
 @end
 
+@interface ScrollView : NSScrollView
+-(instancetype)initWithFrame:(NSRect)frameRect;
+@end
+
+@interface TextWindow : NSWindow
+@property (readonly) BOOL canBecomeKeyWindow;
+@property (readonly) BOOL canBecomeMainWindow;
+@property ScrollView* scrollView;
+@property TextView* textView;
+-(instancetype)initWithContentRect:(NSRect)contentRect;
+-(void)parentDidBecomeMain:(NSNotification *)notification;
+@end
+
+static NSMutableDictionary<NSNumber*, TextWindow*>* textWindows(void);
+static id<NSAccessibility> FindFocused(id<NSAccessibility> root);
+
+
 @implementation TextView
 -(instancetype)initWithFrame:(NSRect)frameRect {
     if ((self = [super initWithFrame:frameRect])) {
@@ -25,12 +42,6 @@
 }
 @end
 
-
-@interface ScrollView : NSScrollView
-@property TextView* textView;
--(instancetype)initWithFrame:(NSRect)frameRect;
-@end
-
 @implementation ScrollView
 -(instancetype)initWithFrame:(NSRect)frameRect {
     if ((self = [super initWithFrame:frameRect])) {
@@ -43,23 +54,9 @@
 }
 @end
 
-
-@interface TextWindow : NSWindow
-@property (NS_NONATOMIC_IOSONLY, readonly) BOOL canBecomeKeyWindow;
-@property (NS_NONATOMIC_IOSONLY, readonly) BOOL canBecomeMainWindow;
-@property ScrollView* scrollView;
-@property TextView* textView;
--(instancetype)initWithContentRect:(NSRect)contentRect;
--(void)parentDidBecomeMain:(NSNotification *)notification;
-@end
-
 @implementation TextWindow
--(BOOL)canBecomeKeyWindow {
-    return YES;
-}
--(BOOL)canBecomeMainWindow {
-    return NO;
-}
+-(BOOL)canBecomeKeyWindow { return YES; }
+-(BOOL)canBecomeMainWindow { return NO; }
 -(instancetype)initWithContentRect:(NSRect)contentRect {
     if ((self=[super initWithContentRect:contentRect
                                styleMask:NSWindowStyleMaskBorderless
@@ -70,7 +67,7 @@
 
         self.contentView = self.scrollView;
         self.scrollView.documentView = self.textView;
-        self.initialFirstResponder = self.scrollView.textView;
+        self.initialFirstResponder = self.textView;
     }
     
     return self;
@@ -84,7 +81,7 @@
 @end
 
 
-static NSMutableDictionary<NSNumber*, TextWindow*>* textWindows()
+NSMutableDictionary<NSNumber*, TextWindow*>* textWindows(void)
 {
     static NSMutableDictionary* table = nil;
     if (table == nil)
@@ -142,15 +139,15 @@ int TWHide(int64_t handle, int64_t b, int64_t c, int64_t d)
     return 0;
 }
 
-static id<NSAccessibility> findFocused(id<NSAccessibility> a)
+id<NSAccessibility> FindFocused(id<NSAccessibility> root)
 {
-    if (a == nil)
+    if (root == nil)
         return nil;
-    if ([a respondsToSelector:@selector(isAccessibilityFocused)] && a.isAccessibilityFocused)
-        return a;
-    if ([a respondsToSelector:@selector(accessibilityChildren)]) {
-        for (id<NSAccessibility> child in a.accessibilityChildren) {
-            id<NSAccessibility> result = findFocused(child);
+    if ([root respondsToSelector:@selector(isAccessibilityFocused)] && root.isAccessibilityFocused)
+        return root;
+    if ([root respondsToSelector:@selector(accessibilityChildren)]) {
+        for (id<NSAccessibility> child in root.accessibilityChildren) {
+            id<NSAccessibility> result = FindFocused(child);
             if (result != nil)
                 return result;
         }
@@ -166,7 +163,7 @@ int TWResize(int64_t handle, int64_t b, int64_t c, int64_t d)
     
     NSWindow* parent = [NSApplication sharedApplication].mainWindow;
     
-    id<NSAccessibility> textBox = findFocused(parent);
+    id<NSAccessibility> textBox = FindFocused(parent);
     
     if (textBox == nil)
         return 0;
