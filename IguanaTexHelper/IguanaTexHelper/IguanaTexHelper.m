@@ -104,38 +104,39 @@ int64_t TWInit(void)
 int TWTerm(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
     TextWindow* window = textWindows()[@(handle)];
-    if (window == nil)
-        return 0;
-    [window orderOut:nil];
-    [textWindows() removeObjectForKey:@(handle)];
+    if (window != nil) {
+        [window orderOut:nil];
+        [textWindows() removeObjectForKey:@(handle)];
+    }
     return 0;
 }
 
 int TWShow(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
     TextWindow* window = textWindows()[@(handle)];
-    if (window == nil || window.isVisible)
-        return 0;
+    if (window != nil && !window.isVisible) {
+        NSWindow* parent = NSApplication.sharedApplication.mainWindow;
     
-    NSWindow* parent = NSApplication.sharedApplication.mainWindow;
-    
-    [parent addChildWindow:window ordered:NSWindowAbove];
+        [parent addChildWindow:window ordered:NSWindowAbove];
 
-    [NSNotificationCenter.defaultCenter addObserver:window
-                                           selector:@selector(parentDidBecomeMain:)
-                                               name:NSWindowDidBecomeMainNotification
-                                             object:parent];
+        [NSNotificationCenter.defaultCenter addObserver:window
+                                               selector:@selector(parentDidBecomeMain:)
+                                                   name:NSWindowDidBecomeMainNotification
+                                                 object:parent];
+    }
     return 0;
 }
 
 int TWHide(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
     NSWindow* window = textWindows()[@(handle)];
-    if (window == nil)
-        return 0;
-    NSWindow* parent = NSApplication.sharedApplication.mainWindow;
-    [NSNotificationCenter.defaultCenter removeObserver:window name:NSWindowDidBecomeMainNotification object:parent];
-    [window orderOut:nil];
+    if (window != nil) {
+        NSWindow* parent = NSApplication.sharedApplication.mainWindow;
+        [NSNotificationCenter.defaultCenter removeObserver:window
+                                                      name:NSWindowDidBecomeMainNotification
+                                                    object:parent];
+        [window orderOut:nil];
+    }
     return 0;
 }
 
@@ -158,30 +159,24 @@ id<NSAccessibility> FindFocused(id<NSAccessibility> root)
 int TWResize(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
     TextWindow* window = textWindows()[@(handle)];
-    if (window == nil)
-        return 0;
-    
-    NSWindow* parent = [NSApplication sharedApplication].mainWindow;
-    
-    id<NSAccessibility> textBox = FindFocused(parent);
-    
-    if (textBox == nil)
-        return 0;
-    
-    [window setFrame:textBox.accessibilityFrame display:YES];
+    if (window != nil) {
+        NSWindow* parent = NSApplication.sharedApplication.mainWindow;
+        id<NSAccessibility> textBox = FindFocused(parent);
+        if (textBox != nil)
+            [window setFrame:textBox.accessibilityFrame display:YES];
+    }
     return 0;
 }
 
 int TWSet(int64_t handle, const char* data, int64_t len, int64_t d)
 {
     TextWindow* window = textWindows()[@(handle)];
-    if (window == nil)
-        return 0;
-    
-    if (data == nil || len == 0)
-        window.textView.string = @"";
-    else
-        window.textView.string = [[NSString alloc] initWithBytes:data length:len encoding:NSUTF8StringEncoding];
+    if (window != nil) {
+        if (data != nil)
+            window.textView.string = [[NSString alloc] initWithBytes:data length:len encoding:NSUTF8StringEncoding];
+        else
+            window.textView.string = @"";
+    }
     return 0;
 }
 
@@ -203,44 +198,44 @@ int TWGet(int64_t handle, char** data, int64_t* len, int64_t d)
 int TWGetSel(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
     TextWindow* window = textWindows()[@(handle)];
-    if (window == nil)
+    if (window != nil)
+        return (int) window.textView.selectedRange.location;
+    else
         return 0;
-    return (int) window.textView.selectedRange.location;
 }
 
 int TWSetSel(int64_t handle, int64_t sel, int64_t c, int64_t d)
 {
     TextWindow* window = textWindows()[@(handle)];
-    if (window == nil)
-        return 0;
-    window.textView.selectedRange = NSMakeRange(sel, 0);
+    if (window != nil)
+        window.textView.selectedRange = NSMakeRange(sel, 0);
     return 0;
 }
 
 int TWFocus(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
     TextWindow* window = textWindows()[@(handle)];
-    if (window == nil)
-        return 0;
-    [window makeKeyWindow];
+    if (window != nil)
+        [window makeKeyWindow];
     return 0;
 }
 
 int TWGetSZ(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
     TextWindow* window = textWindows()[@(handle)];
-    if (window == nil)
+    if (window != nil)
+        return (int) window.textView.font.pointSize;
+    else
         return 0;
-    return (int) window.textView.font.pointSize;
 }
 
 int TWSetSZ(int64_t handle, int64_t size, int64_t c, int64_t d)
 {
     TextWindow* window = textWindows()[@(handle)];
-    if (window == nil)
-        return 0;
-    NSFontDescriptor* descriptor = window.textView.font.fontDescriptor;
-    window.textView.font = [NSFont fontWithDescriptor:descriptor size:size];
+    if (window != nil) {
+        NSFontDescriptor* descriptor = window.textView.font.fontDescriptor;
+        window.textView.font = [NSFont fontWithDescriptor:descriptor size:size];
+    }
     return 0;
 }
 
