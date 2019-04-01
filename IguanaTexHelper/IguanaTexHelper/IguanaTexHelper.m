@@ -115,7 +115,7 @@ int TWShow(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
     TextWindow* window = textWindows()[@(handle)];
     if (window != nil && !window.isVisible) {
-        NSWindow* parent = NSApplication.sharedApplication.mainWindow;
+        NSWindow* parent = NSApp.mainWindow;
     
         [parent addChildWindow:window ordered:NSWindowAbove];
 
@@ -131,7 +131,7 @@ int TWHide(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
     NSWindow* window = textWindows()[@(handle)];
     if (window != nil) {
-        NSWindow* parent = NSApplication.sharedApplication.mainWindow;
+        NSWindow* parent = NSApp.mainWindow;
         [NSNotificationCenter.defaultCenter removeObserver:window
                                                       name:NSWindowDidBecomeMainNotification
                                                     object:parent];
@@ -160,7 +160,7 @@ int TWResize(int64_t handle, int64_t b, int64_t c, int64_t d)
 {
     TextWindow* window = textWindows()[@(handle)];
     if (window != nil) {
-        NSWindow* parent = NSApplication.sharedApplication.mainWindow;
+        NSWindow* parent = NSApp.mainWindow;
         id<NSAccessibility> textBox = FindFocused(parent);
         if (textBox != nil)
             [window setFrame:textBox.accessibilityFrame display:YES];
@@ -238,4 +238,3 @@ int TWSetSZ(int64_t handle, int64_t size, int64_t c, int64_t d)
     }
     return 0;
 }
-
