@@ -13,8 +13,8 @@
 @interface TextWindow : NSWindow
 @property (readonly) BOOL canBecomeKeyWindow;
 @property (readonly) BOOL canBecomeMainWindow;
-@property ScrollView* scrollView;
-@property TextView* textView;
+@property (readonly) ScrollView* scrollView;
+@property (readonly) TextView* textView;
 -(instancetype)initWithContentRect:(NSRect)contentRect;
 -(void)parentDidBecomeMain:(NSNotification *)notification;
 @end
@@ -55,6 +55,8 @@ static id<NSAccessibility> FindFocused(id<NSAccessibility> root);
 @end
 
 @implementation TextWindow
+@synthesize scrollView;
+@synthesize textView;
 -(BOOL)canBecomeKeyWindow { return YES; }
 -(BOOL)canBecomeMainWindow { return NO; }
 -(instancetype)initWithContentRect:(NSRect)contentRect {
@@ -62,12 +64,11 @@ static id<NSAccessibility> FindFocused(id<NSAccessibility> root);
                                styleMask:NSWindowStyleMaskBorderless
                                  backing:NSBackingStoreBuffered
                                    defer:NO])) {
-        self.scrollView = [[ScrollView alloc] initWithFrame:contentRect];
-        self.textView = [[TextView alloc] initWithFrame:NSMakeRect(0, 0, contentRect.size.width, contentRect.size.height)];
-
-        self.contentView = self.scrollView;
-        self.scrollView.documentView = self.textView;
-        self.initialFirstResponder = self.textView;
+        scrollView = [[ScrollView alloc] initWithFrame:contentRect];
+        textView = [[TextView alloc] initWithFrame:NSMakeRect(0, 0, contentRect.size.width, contentRect.size.height)];
+        scrollView.documentView = textView;
+        self.contentView = scrollView;
+        self.initialFirstResponder = textView;
     }
     
     return self;
