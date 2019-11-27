@@ -16,8 +16,8 @@ This is very experimental. Use at your own risk!
 ## Install
 There are 3 files to install ([Dowload here](https://github.com/ray851107/IguanaTexMac/releases)):
 * `IguanaTex.scpt`
-  * an AppleScript file for bypassing some restrictions of Office 2016
-  * (see https://msdn.microsoft.com/en-us/vba/vba-office-mac)
+  * an AppleScript file for bypassing the sandbox introduced in Office 2016
+  * See https://msdn.microsoft.com/en-us/vba/vba-office-mac
 * `libIguanaTexHelper.dylib`
   * library for creating native text views
 * `IguanaTexMac.ppam`
