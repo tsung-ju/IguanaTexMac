@@ -2,9 +2,6 @@
 
 This is very experimental. Use at your own risk!
 
-## Download
-https://github.com/ray851107/IguanaTexMac/releases
-
 ## Prerequisites
 * Supported PowerPoint versions:
   * PowerPoint 2016 (Version 16.16.7 190210 or later)
@@ -12,7 +9,7 @@ https://github.com/ray851107/IguanaTexMac/releases
 * MacTeX
 
 ## Install
-There are 3 files to install:
+There are 3 files to install ([Dowload here](https://github.com/ray851107/IguanaTexMac/releases)):
 * `IguanaTex.scpt`
   * an AppleScript file for bypassing some restrictions of Office 2016
   * (see https://msdn.microsoft.com/en-us/vba/vba-office-mac)
