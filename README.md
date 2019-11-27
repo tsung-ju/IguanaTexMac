@@ -2,6 +2,11 @@
 
 This is very experimental. Use at your own risk!
 
+## Known Issues
+* Vector graphics are not supported
+  * PowerPoint for Mac does not yet support converting emf images into shapes
+  * See https://powerpoint.uservoice.com/forums/288925-powerpoint-for-mac/suggestions/34217164-add-the-ability-to-ungroup-vector-objects-in-power
+
 ## Prerequisites
 * Supported PowerPoint versions:
   * PowerPoint 2016 (Version 16.16.7 190210 or later)
