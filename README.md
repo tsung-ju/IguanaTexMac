@@ -6,6 +6,7 @@ This is very experimental. Use at your own risk!
 * Vector graphics are not supported
   * PowerPoint for Mac does not yet support converting emf images into shapes
   * See https://powerpoint.uservoice.com/forums/288925/suggestions/34217164
+* The input window is not resizable
 
 ## Prerequisites
 * Supported PowerPoint versions:
