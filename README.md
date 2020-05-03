@@ -15,6 +15,23 @@ This is very experimental. Use at your own risk!
 * MacTeX
 
 ## Install
+
+### Method 1 (experimental): Install with [Homebrew](https://brew.sh)
+
+```bash
+brew tap ray851107/iguanatexmac
+brew cask install --no-quarantine iguanatexmac
+```
+
+To uninstall:
+
+```bash
+brew cask uninstall iguanatexmac
+brew untap ray851107/iguanatexmac
+# Restart PowerPoint for the changes to take effect
+```
+
+### Method 2: Install Manually
 There are 3 files to install ([Dowload here](https://github.com/ray851107/IguanaTexMac/releases)):
 * `IguanaTex.scpt`
   * an AppleScript file for bypassing the sandbox introduced in Office 2016
