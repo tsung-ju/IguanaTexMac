@@ -16,7 +16,7 @@ This is very experimental. Use at your own risk!
 
 ## Install
 
-### Method 1 (experimental): Install with [Homebrew](https://brew.sh)
+### Method 1: Install with [Homebrew](https://brew.sh)
 
 ```bash
 brew tap ray851107/iguanatexmac
