@@ -20,13 +20,13 @@ This is very experimental. Use at your own risk!
 
 ```bash
 brew tap ray851107/iguanatexmac
-brew cask install --no-quarantine iguanatexmac
+brew install --cask --no-quarantine iguanatexmac
 ```
 
 To uninstall:
 
 ```bash
-brew cask uninstall iguanatexmac
+brew uninstall --cask iguanatexmac
 brew untap ray851107/iguanatexmac
 # Restart PowerPoint for the changes to take effect
 ```
