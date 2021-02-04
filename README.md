@@ -11,7 +11,7 @@ This is very experimental. Use at your own risk!
   * Running PowerPoint with the setting “Open using Rosetta.” works (only relevant for Apple silicon based Macs)
 
 ## Prerequisites
-* Supported PowerPoint versions:
+* PowerPoint for Mac. Supported versions:
   * PowerPoint 2016 (Version 16.16.7 190210 or later)
   * PowerPoint 2019
 * MacTeX
@@ -34,26 +34,32 @@ brew untap ray851107/iguanatexmac
 ```
 
 ### Method 2: Install Manually
-There are 3 files to install ([Dowload here](https://github.com/ray851107/IguanaTexMac/releases)):
+
+1. [Dowload the "prebuilt files" zip from the latest release](https://github.com/ray851107/IguanaTexMac/releases)
+
+There are 3 files to install:
 * `IguanaTex.scpt`
-  * an AppleScript file for bypassing the sandbox introduced in Office 2016
+  * An AppleScript file for bypassing the sandbox introduced in Office 2016
   * See https://msdn.microsoft.com/en-us/vba/vba-office-mac
 * `libIguanaTexHelper.dylib`
-  * library for creating native text views
+  * Library for creating native text views
+  * The source code is included in the git repo, under the "IguanaTexHelper/" directory.
 * `IguanaTexMac.ppam`
-  * the main plugin file
+  * The main plugin file
 
-1. install AppleScript (IguanaTex.scpt)
+2. Install `IguanaTex.scpt`
 ```bash
 mkdir -p ~/Library/Application\ Scripts/com.microsoft.Powerpoint
 cp ./IguanaTex.scpt ~/Library/Application\ Scripts/com.microsoft.Powerpoint/IguanaTex.scpt
 ```
-2. install IguanaTexHelper (libIguanaTexHelper.dylib)
-```
+
+3. Install `libIguanaTexHelper.dylib`
+```bash
 sudo mkdir -p '/Library/Application Support/Microsoft/Office365/User Content.localized/Add-Ins.localized'
 sudo cp ./libIguanaTexHelper.dylib '/Library/Application Support/Microsoft/Office365/User Content.localized/Add-Ins.localized/libIguanaTexHelper.dylib'
 ```
-3. start PowerPoint, Tools > PowerPoint Add-ins... > '+' , select IguanaTexMac.ppam
+
+4. Start PowerPoint. From the menu bar, select Tools > PowerPoint Add-ins... > '+' , and choose `IguanaTexMac.ppam`
 
 
 Original README
