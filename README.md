@@ -7,6 +7,8 @@ This is very experimental. Use at your own risk!
   * PowerPoint for Mac does not yet support converting emf images into shapes
   * See https://powerpoint.uservoice.com/forums/288925/suggestions/34217164
 * The input window is not resizable
+* Using IguanaTexMac on the Apple silicon based version of PowerPoint results in the programm crashing
+  * Running PowerPoint with the setting “Open using Rosetta.” works (only relevant for Apple silicon based Macs)
 
 ## Prerequisites
 * Supported PowerPoint versions:
