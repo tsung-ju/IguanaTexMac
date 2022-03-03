@@ -25,7 +25,7 @@ This is very experimental. Use at your own risk!
 ### Method 1: Install with [Homebrew](https://brew.sh)
 
 ```bash
-brew tap ray851107/iguanatexmac
+brew tap tsung-ju/iguanatexmac
 brew install --cask --no-quarantine iguanatexmac
 ```
 
@@ -33,13 +33,13 @@ To uninstall:
 
 ```bash
 brew uninstall --cask iguanatexmac
-brew untap ray851107/iguanatexmac
+brew untap tsung-ju/iguanatexmac
 # Restart PowerPoint for the changes to take effect
 ```
 
 ### Method 2: Install Manually
 
-1. [Dowload the "prebuilt files" zip from the latest release](https://github.com/ray851107/IguanaTexMac/releases)
+1. [Dowload the "prebuilt files" zip from the latest release](https://github.com/tsung-ju/IguanaTexMac/releases)
 
 There are 3 files to install:
 * `IguanaTex.scpt`
