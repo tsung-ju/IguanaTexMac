@@ -1,5 +1,5 @@
 NOTE: This repository is going to be archived as all the changes have been merged into [the official repo](https://github.com/Jonathan-LeRoux/IguanaTex).
-
+See [here](https://github.com/Jonathan-LeRoux/IguanaTex#mac-1) for installation instructions.
 
 
 # IguanaTexMac
