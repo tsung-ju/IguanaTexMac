@@ -1,6 +1,6 @@
-NOTE: This repository is going to be archived as all the changes have been merged into [the official repo](https://github.com/Jonathan-LeRoux/IguanaTex).
-See [here](https://github.com/Jonathan-LeRoux/IguanaTex#mac-1) for installation instructions.
-
+NOTE: This repository is for the deprecated macOS port of IguanaTex.
+Support for macOS has been merged back into [the original IguanaTex](https://github.com/Jonathan-LeRoux/IguanaTex) since version 1.60,
+along with some additional features such as vector graphics, resizable input window, keyboard shortcuts, and support for M1 macs.
 
 # IguanaTexMac
 
